@@ -171,9 +171,8 @@
     </style>
 </head>
 <body>
-    <div class="music-toggle" id="music-toggle" title="Toggle background music">🎵</div>
+    <div class="music-toggle" id="music-toggle" title="Toggle stage music">🎵</div>
     <div id="game-container">
-        <!-- screens as before -->
         <div class="screen active" id="screen-title">
             <div class="title-logo">BABYMONSTER</div>
             <div class="title-sub">Journey to Stardom</div>
@@ -222,29 +221,32 @@
         <div class="overlay" id="overlay"></div>
     </div>
 
-    <!-- Background music (replace src with any BABYMONSTER MP3 URL) -->
-    <audio id="bg-music" loop preload="none" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+    <!-- Audio elements -->
+    <audio id="intro-music" loop preload="none" src="https://www.dropbox.com/scl/fi/n4tsockzskivncm7qjpfs/BABYMONSTER-MONSTERS-Intro-Official-Audio.mp3?rlkey=9ix2x5gm49h6ilvxpnzsdl8sn&st=o4pxseia&dl=1"></audio>
+    <audio id="stage-music" loop preload="none"></audio>
 
     <script>
         (function() {
-            // ---------- MEMBER DATA ----------
+            // ---------- MEMBER DATA (OFFICIAL PHOTOS) ----------
             const members = [
-                { id:'ruka', name:'Ruka', role:'All-Rounder', color:'#ff6b6b', photo:'https://static.asiachan.com/Kawai.Ruka.full.485715.jpg', stats:{ vocal:72, dance:82, rap:70, charisma:76 } },
-                { id:'pharita', name:'Pharita', role:'Vocal Queen', color:'#ffd93d', photo:'https://static.asiachan.com/Pharita.full.328616.jpg', stats:{ vocal:90, dance:68, rap:55, charisma:78 } },
-                { id:'asa', name:'Asa', role:'Rap Master', color:'#6bcb77', photo:'https://static.asiachan.com/Enami.Asa.full.483945.jpg', stats:{ vocal:62, dance:80, rap:92, charisma:72 } },
-                { id:'ahyeon', name:'Ahyeon', role:'Center', color:'#ff69b4', photo:'https://static.asiachan.com/Jung.Ahyeon.full.478777.jpg', stats:{ vocal:88, dance:78, rap:65, charisma:90 } },
-                { id:'rami', name:'Rami', role:'Vocal Power', color:'#4d96ff', photo:'https://yg-life.com/wp-content/uploads/2023/11/20afda20d7a1566b5a6ac20d3760d2b3-e1700641984156.jpg', stats:{ vocal:94, dance:60, rap:50, charisma:80 } },
-                { id:'rora', name:'Rora', role:'Melody Maker', color:'#9b59b6', photo:'https://static.asiachan.com/Rora.full.485703.jpg', stats:{ vocal:85, dance:70, rap:58, charisma:75 } },
-                { id:'chiquita', name:'Chiquita', role:'Dance Machine', color:'#ff8c42', photo:'https://static.asiachan.com/Chiquita.full.485709.jpg', stats:{ vocal:68, dance:95, rap:60, charisma:85 } }
+                { id:'ruka',     name:'Ruka',     role:'All-Rounder',   color:'#ff6b6b', photo:'https://ygfamily.com/contents/images/2026/05/RUKA.jpg',     stats:{ vocal:72, dance:82, rap:70, charisma:76 } },
+                { id:'pharita',  name:'Pharita',  role:'Vocal Queen',   color:'#ffd93d', photo:'https://ygfamily.com/contents/images/2026/05/PHARITA.jpg',  stats:{ vocal:90, dance:68, rap:55, charisma:78 } },
+                { id:'asa',      name:'Asa',      role:'Rap Master',    color:'#6bcb77', photo:'https://ygfamily.com/contents/images/2026/05/ASA.jpg',      stats:{ vocal:62, dance:80, rap:92, charisma:72 } },
+                { id:'ahyeon',   name:'Ahyeon',   role:'Center',        color:'#ff69b4', photo:'https://ygfamily.com/contents/images/2026/05/AHYEON.jpg',   stats:{ vocal:88, dance:78, rap:65, charisma:90 } },
+                { id:'rami',     name:'Rami',     role:'Vocal Power',   color:'#4d96ff', photo:'https://ygfamily.com/contents/images/2024/11/rami.jpg',     stats:{ vocal:94, dance:60, rap:50, charisma:80 } },
+                { id:'rora',     name:'Rora',     role:'Melody Maker',  color:'#9b59b6', photo:'https://ygfamily.com/contents/images/2026/05/RORA.jpg',     stats:{ vocal:85, dance:70, rap:58, charisma:75 } },
+                { id:'chiquita', name:'Chiquita', role:'Dance Machine', color:'#ff8c42', photo:'https://ygfamily.com/contents/images/2026/05/CHIQUITA.jpg',  stats:{ vocal:68, dance:95, rap:60, charisma:85 } }
             ];
+
+            // ---------- STAGES (WITH OFFICIAL MP3s) ----------
             const stages = [
-                { id:1, name:'Dream', icon:'💭', stat:'dance', difficulty:15, fanReward:5000, song:'Dream', bpm:90, noteCount:20 },
-                { id:2, name:'Batter Up', icon:'⚾', stat:'vocal', difficulty:28, fanReward:8000, song:'Batter Up', bpm:110, noteCount:24 },
-                { id:3, name:'SHEESH', icon:'😤', stat:'charisma', difficulty:42, fanReward:15000, song:'SHEESH', bpm:125, noteCount:28 },
-                { id:4, name:'DRIP', icon:'💧', stat:'dance', difficulty:58, fanReward:25000, song:'DRIP', bpm:135, noteCount:30 },
-                { id:5, name:'We Go Up', icon:'🚀', stat:'vocal', difficulty:72, fanReward:50000, song:'We Go Up', bpm:145, noteCount:34 },
-                { id:6, name:'Psycho', icon:'🌀', stat:'charisma', difficulty:84, fanReward:100000, song:'Psycho', bpm:155, noteCount:38 },
-                { id:7, name:'CHOOM', icon:'🔥', stat:'rap', difficulty:95, fanReward:200000, song:'CHOOM', bpm:170, noteCount:42 }
+                { id:1, song:'Dream',        icon:'💭', stat:'dance',   difficulty:15, fanReward:5000,  bpm:90,  noteCount:20, mp3:'https://www.dropbox.com/scl/fi/tczht5wuiw63byz2o89f8/BABYMONSTER-DREAM-PRE-DEBUT-SONG.mp3?rlkey=gcz9f2cjs7nz4ygxeoglj8idq&st=8k3d7bwz&dl=1' },
+                { id:2, song:'Batter Up',    icon:'⚾',  stat:'vocal',   difficulty:28, fanReward:8000,  bpm:110, noteCount:24, mp3:'https://www.dropbox.com/scl/fi/a4um9fqy2l1g7v5k88mc5/BABYMONSTER-BATTER-UP-M_V.mp3?rlkey=3d9tq3tdqnyk1islvjfzjdi8n&st=bj3r2n93&dl=1' },
+                { id:3, song:'SHEESH',       icon:'😤', stat:'charisma', difficulty:42, fanReward:15000, bpm:125, noteCount:28, mp3:'https://www.dropbox.com/scl/fi/x1wampdcw4hq1hc0dms6d/BABYMONSTER-SHEESH-M_V.mp3?rlkey=mstnjvlkb2v9fnibj1iezey8k&st=zbfh2yhc&dl=1' },
+                { id:4, song:'DRIP',         icon:'💧', stat:'dance',    difficulty:58, fanReward:25000, bpm:135, noteCount:30, mp3:'https://www.dropbox.com/scl/fi/pffmq5w1r6zbidsu77l1h/BABYMONSTER-DRIP-M_V.mp3?rlkey=wktx0hsfzcph75yg9g7duv6oh&st=pdi07ax9&dl=1' },
+                { id:5, song:'We Go Up',     icon:'🚀', stat:'vocal',    difficulty:72, fanReward:50000, bpm:145, noteCount:34, mp3:'https://www.dropbox.com/scl/fi/947g7gqx3jgkx0edwvx1q/BABYMONSTER-WE-GO-UP-M_V.mp3?rlkey=i29zyr8lrq65f5xyj68w4tf0q&st=4zjis030&dl=1' },
+                { id:6, song:'Psycho',       icon:'🌀', stat:'charisma', difficulty:84, fanReward:100000,bpm:155, noteCount:38, mp3:'https://www.dropbox.com/scl/fi/dnoy9u3xnb5wzawy4dntw/BABYMONSTER-PSYCHO-M_V.mp3?rlkey=uoedih1a9jnpywbqyj1jn0tfl&st=pg9jlsdu&dl=1' },
+                { id:7, song:'CHOOM',        icon:'🔥', stat:'rap',      difficulty:95, fanReward:200000,bpm:170, noteCount:42, mp3:'https://www.dropbox.com/scl/fi/zg8o1kk5qduq03w8dbdk5/BABYMONSTER-CHOOM-M_V.mp3?rlkey=0vd5ets2ij9124igvm5c7n0rl&st=iqms9vji&dl=1' }
             ];
 
             let gameState = {
@@ -256,17 +258,12 @@
 
             // ---------- AUDIO SYSTEM ----------
             let audioCtx = null;
-            const bgMusic = document.getElementById('bg-music');
+            const introMusic = document.getElementById('intro-music');
+            const stageMusic = document.getElementById('stage-music');
             const musicToggle = document.getElementById('music-toggle');
-            let musicPlaying = false;
+            let musicEnabled = true;
 
-            // Initialize audio context on first user interaction
-            function initAudio() {
-                if (audioCtx) return;
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            // Play a simple synth note
+            function initAudio() { if (audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
             function playNote(freq, duration, type='sine', vol=0.1) {
                 if (!audioCtx) return;
                 const osc = audioCtx.createOscillator();
@@ -280,52 +277,57 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
             }
-
             function playHitSound(quality) {
                 initAudio();
-                if (quality === 'perfect') {
-                    playNote(880, 0.1, 'triangle', 0.15);
-                    setTimeout(() => playNote(1100, 0.1, 'triangle', 0.1), 50);
-                } else if (quality === 'good') {
-                    playNote(660, 0.1, 'sine', 0.12);
-                } else {
-                    playNote(200, 0.1, 'square', 0.05);
-                }
+                if (quality === 'perfect') { playNote(880, 0.1, 'triangle', 0.15); setTimeout(() => playNote(1100, 0.1, 'triangle', 0.1), 50); }
+                else if (quality === 'good') { playNote(660, 0.1, 'sine', 0.12); }
+                else { playNote(200, 0.1, 'square', 0.05); }
             }
-
             function playTitleJingle() {
                 initAudio();
-                const notes = [523, 659, 784, 880, 1047]; // C5, E5, G5, A5, C6
-                notes.forEach((freq, i) => {
-                    setTimeout(() => playNote(freq, 0.15, 'triangle', 0.1), i * 100);
-                });
+                const notes = [523, 659, 784, 880, 1047];
+                notes.forEach((freq, i) => { setTimeout(() => playNote(freq, 0.15, 'triangle', 0.1), i * 100); });
             }
 
-            // Music toggle
+            function stopIntroMusic() { introMusic.pause(); introMusic.currentTime = 0; }
+            function stopStageMusic() { stageMusic.pause(); stageMusic.currentTime = 0; }
+
+            function playIntroMusic() {
+                if (!musicEnabled) return;
+                stopStageMusic(); // ensure stage music isn't playing
+                introMusic.play().catch(() => {});
+            }
+
+            function playStageMusic(stage) {
+                if (!musicEnabled || !stage.mp3) return;
+                stopIntroMusic(); // stop intro if playing
+                stopStageMusic();
+                stageMusic.src = stage.mp3;
+                stageMusic.load();
+                stageMusic.play().catch(() => {});
+            }
+
             musicToggle.addEventListener('click', () => {
                 initAudio();
-                if (musicPlaying) {
-                    bgMusic.pause();
-                    musicToggle.textContent = '🎵';
-                    musicPlaying = false;
+                musicEnabled = !musicEnabled;
+                if (musicEnabled) {
+                    musicToggle.textContent = '🔊';
+                    // resume appropriate music depending on current screen
+                    if (gameState.screen === 'select') playIntroMusic();
+                    else if (gameState.screen === 'challenge' && gameState.gameRunning) playStageMusic(stages[gameState.currentStageIndex]);
                 } else {
-                    bgMusic.play().then(() => {
-                        musicToggle.textContent = '🔊';
-                        musicPlaying = true;
-                    }).catch(() => {
-                        alert('Click anywhere first to enable audio, then try again.');
-                    });
+                    musicToggle.textContent = '🎵';
+                    stopIntroMusic();
+                    stopStageMusic();
                 }
             });
 
-            // Auto-play title jingle on first load (requires user gesture)
             document.body.addEventListener('click', function once() {
                 initAudio();
                 playTitleJingle();
                 document.body.removeEventListener('click', once);
             }, { once: true });
 
-            // ---------- DOM ELEMENTS ----------
             const screens = {
                 title: document.getElementById('screen-title'),
                 select: document.getElementById('screen-select'),
@@ -354,13 +356,19 @@
                 Object.values(screens).forEach(s => s.classList.remove('active'));
                 if (screens[name]) screens[name].classList.add('active');
                 gameState.screen = name;
+                // Manage music based on screen
+                if (name === 'select') {
+                    playIntroMusic();
+                } else {
+                    stopIntroMusic();
+                    if (name !== 'challenge') stopStageMusic();
+                }
                 if (name === 'title') {
                     initAudio();
                     playTitleJingle();
                 }
             }
 
-            // ---------- EVENT LISTENERS ----------
             btnStart.addEventListener('click', startGame);
             btnBackSelect.addEventListener('click', goToTitle);
             btnQuitJourney.addEventListener('click', goToTitle);
@@ -406,7 +414,7 @@
                 gameState.fans = 1000; gameState.currentStageIndex = 0;
                 gameState.completedStages = []; gameState.stageResults = []; gameState.memberColor = member.color;
                 renderJourneyScreen(); showScreen('journey'); spawnParticles('🌟', 12);
-                playNote(523, 0.2, 'triangle', 0.1); // confirmation sound
+                playNote(523, 0.2, 'triangle', 0.1);
             }
 
             function renderMemberGrid() {
@@ -455,9 +463,9 @@
                 stageHint.textContent = 'Tap the lanes when notes hit the golden zone!';
                 showScreen('challenge'); startRhythmGame(stage);
                 playNote(660, 0.1, 'triangle', 0.1);
+                playStageMusic(stage);
             }
 
-            // ---------- RHYTHM GAME ----------
             let animFrameId;
             function generatePattern(stage) {
                 const pattern = [], totalNotes = stage.noteCount, beatInterval = 60000 / stage.bpm, songDuration = totalNotes * beatInterval * 0.9;
@@ -550,7 +558,7 @@
             }
 
             function finishStage(stage) {
-                stopRhythmGame();
+                stopRhythmGame(); stopStageMusic();
                 const totalPossible = gameState.totalNotes*100*5, perf = gameState.score/Math.max(1,totalPossible);
                 let result = 'miss'; if (perf>0.7) result='perfect'; else if (perf>0.4) result='good';
                 const fansGained = Math.floor(stage.fanReward*(0.5+perf)*(1+gameState.playerStats[stage.stat]/200));
@@ -602,12 +610,8 @@
                 }
             }
 
-            // First load jingle
             window.addEventListener('load', () => {
-                setTimeout(() => {
-                    initAudio();
-                    playTitleJingle();
-                }, 500);
+                setTimeout(() => { initAudio(); playTitleJingle(); }, 500);
             });
 
             renderMemberGrid(); showScreen('title');
