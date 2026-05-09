@@ -139,7 +139,7 @@
             background:#1a1a2e; border:2px solid var(--gold); border-radius:20px;
             padding:28px 24px; text-align:center; z-index:100;
             animation:bounceIn 0.5s ease-out; box-shadow:0 20px 60px rgba(0,0,0,0.8);
-            max-width:380px; width:90%;
+            max-width:450px; width:90%;
         }
         .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:90; display:none; }
         .overlay.active { display:block; }
@@ -158,6 +158,11 @@
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%;
             width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 1.2em; color: var(--white);
+        }
+
+        #name-input-area input {
+            width:80%; padding:10px; border-radius:12px; border:2px solid var(--border);
+            background:#1a1a2e; color:white; text-align:center; font-size:1em; margin-bottom:8px;
         }
 
         @media (max-width:400px) {
@@ -251,7 +256,8 @@
                 screen:'title', selectedMember:null, currentStageIndex:0, fans:0,
                 playerStats:null, memberColor:'#ff2d78', completedStages:[], stageResults:[],
                 gameRunning:false, notes:[], pattern:[], startTime:0, score:0, combo:0, maxCombo:0,
-                totalNotes:0, hitNotes:0, missedNotes:0, statUsed:'', stageDone:false
+                totalNotes:0, hitNotes:0, missedNotes:0, statUsed:'', stageDone:false,
+                speedFactor: 1500
             };
 
             let audioCtx = null;
@@ -452,7 +458,9 @@
 
             function startStage(index) {
                 if (index !== gameState.currentStageIndex || gameState.gameRunning) return;
-                const stage = stages[index]; gameState.statUsed = stage.stat;
+                const stage = stages[index];
+                gameState.statUsed = stage.stat;
+                gameState.speedFactor = Math.max(200, 1500 - stage.difficulty * 12); // faster for harder stages
                 songNameEl.textContent = '🎵 ' + stage.song;
                 challengeStatEl.textContent = `Required: ${stage.stat.toUpperCase()} (Your stat: ${gameState.playerStats[stage.stat]})`;
                 stageHint.textContent = 'Tap the lanes when notes hit the golden zone!';
@@ -463,9 +471,9 @@
 
             let animFrameId;
             function generatePattern(stage) {
-                // Generate notes evenly spaced over a realistic song duration (~2.5 minutes)
-                const totalDurationMs = 150000; // 2.5 minutes in milliseconds
-                const noteCount = stage.noteCount; // based on BPM: 72 - 136 notes
+                // Shorten song duration for trimmed MP3s – notes evenly spaced
+                const totalDurationMs = Math.max(20000, 90000 - stage.difficulty * 600);
+                const noteCount = stage.noteCount;
                 const noteSpacing = totalDurationMs / noteCount;
                 const pattern = [];
                 for (let i = 0; i < noteCount; i++) {
@@ -474,7 +482,7 @@
                         lane: Math.floor(Math.random() * 4)
                     });
                 }
-                return pattern; // already sorted by time
+                return pattern;
             }
 
             function startRhythmGame(stage) {
@@ -506,7 +514,9 @@
                 const hh = hHeight();
                 gameState.notes.forEach(n => {
                     if (n.hit) return;
-                    const topPos = ((elapsed - n.time)/1500)*hh*0.9 - 30;
+                    const noteAge = elapsed - n.time;
+                    const travelDistance = (noteAge / gameState.speedFactor) * hh * 0.9;
+                    const topPos = travelDistance - 30;
                     n.el.style.top = topPos + 'px';
                     if (topPos > hh * HZ_BOT + 20) {
                         n.hit = true; n.el.style.opacity = '0.3';
@@ -586,6 +596,40 @@
 
             function hideOverlay() { overlay.classList.remove('active'); overlay.innerHTML = ''; }
 
+            // ----- LEADERBOARD (localStorage) -----
+            function getLeaderboard() {
+                const stored = localStorage.getItem('babymonster_leaderboard');
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            function saveLeaderboard(entries) {
+                localStorage.setItem('babymonster_leaderboard', JSON.stringify(entries));
+            }
+
+            function postScore(playerName, memberName, fans, rankTitle) {
+                const entry = { name: playerName, member: memberName, score: fans, title: rankTitle };
+                const leaderboard = getLeaderboard();
+                leaderboard.push(entry);
+                leaderboard.sort((a,b) => b.score - a.score);
+                saveLeaderboard(leaderboard.slice(0,5));
+            }
+
+            function displayLeaderboard() {
+                const listEl = document.getElementById('leaderboard-list');
+                if (!listEl) return;
+                const leaderboard = getLeaderboard();
+                if (leaderboard.length === 0) {
+                    listEl.innerHTML = '<p style="color:var(--subtle);">No scores yet. Be the first!</p>';
+                    return;
+                }
+                listEl.innerHTML = leaderboard.map((entry, i) => 
+                    `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                        <span>${i+1}. ${entry.name} as ${entry.member}</span>
+                        <span style="color:var(--gold);">${entry.score.toLocaleString()} - ${entry.title}</span>
+                    </div>`
+                ).join('');
+            }
+
             function showGameComplete() {
                 const total = gameState.fans;
                 let rank = total >= 50000000 ? '🏆 LEGENDARY STAR' :
@@ -593,8 +637,36 @@
                            total >= 10000000 ? '💫 RISING STAR' :
                            total >= 1000000  ? '🎤 POPULAR IDOL' : '🌱 ROOKIE';
                 const member = members.find(m=>m.id===gameState.selectedMember);
-                overlay.innerHTML = `<div class="result-popup" id="final-popup" style="max-width:420px;"><span style="font-size:4em;">🎉</span><div class="result-text" style="color:var(--gold);">JOURNEY COMPLETE!</div><p style="color:var(--white);">${member.name} - ${rank}</p><p style="color:var(--gold);font-weight:700;font-size:1.2em;">${total.toLocaleString()} Fans</p><div style="margin:8px 0;text-align:left;font-size:0.75em;">${gameState.stageResults.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>${stages[i].song}</span><span style="color:${r.result==='perfect'?'#4cff8d':r.result==='good'?'#f0c060':'#ff6b6b'};">${r.result.toUpperCase()} (+${r.fansGained.toLocaleString()})</span></div>`).join('')}</div><p style="color:var(--white);">Final Stats: 🎤${gameState.playerStats.vocal} 💃${gameState.playerStats.dance} 🎙️${gameState.playerStats.rap} ✨${gameState.playerStats.charisma}</p><button class="btn btn-gold" id="btn-replay">🔄 PLAY AGAIN</button><button class="btn btn-secondary btn-sm" id="btn-title" style="display:block;width:100%;margin-top:8px;">← Title Screen</button></div>`;
+                overlay.innerHTML = `
+                    <div class="result-popup" id="final-popup" style="max-width:480px;">
+                        <span style="font-size:4em;">🎉</span>
+                        <div class="result-text" style="color:var(--gold);">JOURNEY COMPLETE!</div>
+                        <p style="color:var(--white);">${member.name} - ${rank}</p>
+                        <p style="color:var(--gold);font-weight:700;font-size:1.2em;">${total.toLocaleString()} Fans</p>
+                        <div style="margin:8px 0;text-align:left;font-size:0.75em;">
+                            ${gameState.stageResults.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>${stages[i].song}</span><span style="color:${r.result==='perfect'?'#4cff8d':r.result==='good'?'#f0c060':'#ff6b6b'};">${r.result.toUpperCase()} (+${r.fansGained.toLocaleString()})</span></div>`).join('')}
+                        </div>
+                        <div id="name-input-area" style="margin:12px 0;">
+                            <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="20">
+                            <button class="btn btn-gold" id="post-score-btn" style="margin-top:8px;">📢 POST SCORE</button>
+                        </div>
+                        <div id="leaderboard-area" style="display:none; margin-top:16px; text-align:center; border-top:1px solid var(--border); padding-top:12px;">
+                            <h3 style="color:var(--gold);">🏆 TOP 5 LEGENDS</h3>
+                            <div id="leaderboard-list" style="font-size:0.85em; color:var(--white);"></div>
+                        </div>
+                        <button class="btn btn-gold" id="btn-replay" style="margin-top:12px;">🔄 PLAY AGAIN</button>
+                        <button class="btn btn-secondary btn-sm" id="btn-title" style="display:block;width:100%;margin-top:8px;">← Title Screen</button>
+                    </div>
+                `;
                 overlay.classList.add('active');
+                document.getElementById('post-score-btn').addEventListener('click', () => {
+                    const nameInput = document.getElementById('player-name-input');
+                    const playerName = nameInput.value.trim() || 'BABYMONSTER Fan';
+                    postScore(playerName, member.name, total, rank);
+                    document.getElementById('name-input-area').style.display = 'none';
+                    document.getElementById('leaderboard-area').style.display = 'block';
+                    displayLeaderboard();
+                });
                 document.getElementById('btn-replay').addEventListener('click', startGame);
                 document.getElementById('btn-title').addEventListener('click', goToTitle);
                 showScreen('journey');
