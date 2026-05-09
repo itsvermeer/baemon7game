@@ -52,6 +52,15 @@
         }
         #tap-to-start h1 { font-size: 2.5em; color: var(--pink); }
         #tap-to-start p { color: var(--subtle); margin-top: 12px; }
+        #ios-message {
+            display: none; /* hidden by default, shown only for iOS */
+            color: #ffcccc;
+            font-size: 0.9em;
+            margin: 10px 20px;
+            padding: 8px;
+            background: rgba(255,0,0,0.15);
+            border-radius: 8px;
+        }
 
         .title-logo {
             font-size:2.8em; font-weight:900; letter-spacing:2px; text-align:center; line-height:1.1;
@@ -198,6 +207,11 @@
     <div id="tap-to-start">
         <h1>BABYMONSTER</h1>
         <p>Journey to Stardom</p>
+        <div id="ios-message">
+            ⚠️ Apple devices may block background music.<br>
+            Tap anywhere to enable audio.<br>
+            Sorry for the inconvenience.
+        </div>
         <p style="margin-top: 20px; font-size: 1.2em;">👇 TAP TO START</p>
     </div>
 
@@ -256,12 +270,21 @@
         <div class="overlay" id="overlay"></div>
     </div>
 
-    <!-- NATIVE AUDIO ELEMENTS (no CORS, works everywhere with user gesture) -->
     <audio id="intro-music" loop preload="auto" src="https://www.dropbox.com/scl/fi/n4tsockzskivncm7qjpfs/BABYMONSTER-MONSTERS-Intro-Official-Audio.mp3?rlkey=9ix2x5gm49h6ilvxpnzsdl8sn&st=o4pxseia&dl=1"></audio>
     <audio id="stage-music" loop preload="auto"></audio>
 
     <script>
         (function() {
+            // ---------- iOS DETECTION ----------
+            function isIOS() {
+                return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            }
+
+            if (isIOS()) {
+                document.getElementById('ios-message').style.display = 'block';
+            }
+
             const members = [
                 { id:'ruka', name:'Ruka', role:'All-Rounder', color:'#ff6b6b', photo:'https://ygfamily.com/contents/images/2026/05/RUKA.jpg', stats:{vocal:72,dance:82,rap:70,charisma:76} },
                 { id:'pharita', name:'Pharita', role:'Vocal Queen', color:'#ffd93d', photo:'https://ygfamily.com/contents/images/2026/05/PHARITA.jpg', stats:{vocal:90,dance:68,rap:55,charisma:78} },
@@ -324,8 +347,8 @@
                 }
             }
 
-            // Audio system – uses native <audio> elements (no CORS issues)
-            let audioCtx = null; // only for sound effects
+            // Audio system – native <audio> elements
+            let audioCtx = null;
             const introMusic = document.getElementById('intro-music');
             const stageMusic = document.getElementById('stage-music');
             const musicToggle = document.getElementById('music-toggle');
@@ -366,8 +389,7 @@
             function playIntroMusic() {
                 if (!musicEnabled) return;
                 stopStageMusic();
-                // play() from user gesture context works on iOS
-                introMusic.play().catch(e => console.log('intro play error', e));
+                introMusic.play().catch(e => console.log('intro music blocked'));
             }
 
             function playStageMusic(stage) {
@@ -376,8 +398,7 @@
                 stopStageMusic();
                 stageMusic.src = stage.mp3;
                 stageMusic.load();
-                // play after src change – still within user gesture (click on stage)
-                stageMusic.play().catch(e => console.log('stage play error', e));
+                stageMusic.play().catch(e => console.log('stage music blocked'));
             }
 
             musicToggle.addEventListener('click', () => {
@@ -395,19 +416,15 @@
                 }
             });
 
-            // Tap-to-start overlay – unlocks audio and starts game
             document.getElementById('tap-to-start').addEventListener('click', () => {
                 initAudio();
-                // pre-load and play intro music directly from user gesture
-                introMusic.play().then(() => {
-                    console.log('Intro music playing');
-                }).catch(e => console.log('autoplay prevented', e));
-
+                introMusic.play().catch(e => {});
                 document.getElementById('tap-to-start').style.display = 'none';
                 showScreen('title');
                 playTitleJingle();
             });
 
+            // (Rest of the game logic: screens, navigation, rhythm engine, etc. – identical to previous version)
             const screens = {
                 title: document.getElementById('screen-title'),
                 select: document.getElementById('screen-select'),
@@ -541,12 +558,12 @@
                 showScreen('challenge');
                 startRhythmGame(stage);
                 playNote(660, 0.1, 'triangle', 0.1);
-                playStageMusic(stage); // called directly from click handler – works on iOS
+                playStageMusic(stage);
             }
 
             let animFrameId;
             function generatePattern(stage) {
-                const totalDurationMs = 60000; // 1 minute exactly
+                const totalDurationMs = 60000;
                 const noteSpacing = totalDurationMs / stage.noteCount;
                 const pattern = [];
                 for (let i = 0; i < stage.noteCount; i++) {
