@@ -221,13 +221,11 @@
         <div class="overlay" id="overlay"></div>
     </div>
 
-    <!-- Audio elements -->
     <audio id="intro-music" loop preload="none" src="https://www.dropbox.com/scl/fi/n4tsockzskivncm7qjpfs/BABYMONSTER-MONSTERS-Intro-Official-Audio.mp3?rlkey=9ix2x5gm49h6ilvxpnzsdl8sn&st=o4pxseia&dl=1"></audio>
     <audio id="stage-music" loop preload="none"></audio>
 
     <script>
         (function() {
-            // ---------- MEMBER DATA (OFFICIAL PHOTOS) ----------
             const members = [
                 { id:'ruka',     name:'Ruka',     role:'All-Rounder',   color:'#ff6b6b', photo:'https://ygfamily.com/contents/images/2026/05/RUKA.jpg',     stats:{ vocal:72, dance:82, rap:70, charisma:76 } },
                 { id:'pharita',  name:'Pharita',  role:'Vocal Queen',   color:'#ffd93d', photo:'https://ygfamily.com/contents/images/2026/05/PHARITA.jpg',  stats:{ vocal:90, dance:68, rap:55, charisma:78 } },
@@ -238,15 +236,15 @@
                 { id:'chiquita', name:'Chiquita', role:'Dance Machine', color:'#ff8c42', photo:'https://ygfamily.com/contents/images/2026/05/CHIQUITA.jpg',  stats:{ vocal:68, dance:95, rap:60, charisma:85 } }
             ];
 
-            // ---------- STAGES (WITH OFFICIAL MP3s) ----------
+            // Stages with boosted fan rewards (to reach 50M Legend) and note counts based on BPM
             const stages = [
-                { id:1, song:'Dream',        icon:'💭', stat:'dance',   difficulty:15, fanReward:5000,  bpm:90,  noteCount:20, mp3:'https://www.dropbox.com/scl/fi/tczht5wuiw63byz2o89f8/BABYMONSTER-DREAM-PRE-DEBUT-SONG.mp3?rlkey=gcz9f2cjs7nz4ygxeoglj8idq&st=8k3d7bwz&dl=1' },
-                { id:2, song:'Batter Up',    icon:'⚾',  stat:'vocal',   difficulty:28, fanReward:8000,  bpm:110, noteCount:24, mp3:'https://www.dropbox.com/scl/fi/a4um9fqy2l1g7v5k88mc5/BABYMONSTER-BATTER-UP-M_V.mp3?rlkey=3d9tq3tdqnyk1islvjfzjdi8n&st=bj3r2n93&dl=1' },
-                { id:3, song:'SHEESH',       icon:'😤', stat:'charisma', difficulty:42, fanReward:15000, bpm:125, noteCount:28, mp3:'https://www.dropbox.com/scl/fi/x1wampdcw4hq1hc0dms6d/BABYMONSTER-SHEESH-M_V.mp3?rlkey=mstnjvlkb2v9fnibj1iezey8k&st=zbfh2yhc&dl=1' },
-                { id:4, song:'DRIP',         icon:'💧', stat:'dance',    difficulty:58, fanReward:25000, bpm:135, noteCount:30, mp3:'https://www.dropbox.com/scl/fi/pffmq5w1r6zbidsu77l1h/BABYMONSTER-DRIP-M_V.mp3?rlkey=wktx0hsfzcph75yg9g7duv6oh&st=pdi07ax9&dl=1' },
-                { id:5, song:'We Go Up',     icon:'🚀', stat:'vocal',    difficulty:72, fanReward:50000, bpm:145, noteCount:34, mp3:'https://www.dropbox.com/scl/fi/947g7gqx3jgkx0edwvx1q/BABYMONSTER-WE-GO-UP-M_V.mp3?rlkey=i29zyr8lrq65f5xyj68w4tf0q&st=4zjis030&dl=1' },
-                { id:6, song:'Psycho',       icon:'🌀', stat:'charisma', difficulty:84, fanReward:100000,bpm:155, noteCount:38, mp3:'https://www.dropbox.com/scl/fi/dnoy9u3xnb5wzawy4dntw/BABYMONSTER-PSYCHO-M_V.mp3?rlkey=uoedih1a9jnpywbqyj1jn0tfl&st=pg9jlsdu&dl=1' },
-                { id:7, song:'CHOOM',        icon:'🔥', stat:'rap',      difficulty:95, fanReward:200000,bpm:170, noteCount:42, mp3:'https://www.dropbox.com/scl/fi/zg8o1kk5qduq03w8dbdk5/BABYMONSTER-CHOOM-M_V.mp3?rlkey=0vd5ets2ij9124igvm5c7n0rl&st=iqms9vji&dl=1' }
+                { id:1, song:'Dream',        icon:'💭', stat:'dance',   difficulty:15, fanReward:150000,     bpm:90,  noteCount:72,  mp3:'https://www.dropbox.com/scl/fi/tczht5wuiw63byz2o89f8/BABYMONSTER-DREAM-PRE-DEBUT-SONG.mp3?rlkey=gcz9f2cjs7nz4ygxeoglj8idq&st=8k3d7bwz&dl=1' },
+                { id:2, song:'Batter Up',    icon:'⚾',  stat:'vocal',   difficulty:28, fanReward:400000,     bpm:110, noteCount:88,  mp3:'https://www.dropbox.com/scl/fi/a4um9fqy2l1g7v5k88mc5/BABYMONSTER-BATTER-UP-M_V.mp3?rlkey=3d9tq3tdqnyk1islvjfzjdi8n&st=bj3r2n93&dl=1' },
+                { id:3, song:'SHEESH',       icon:'😤', stat:'charisma', difficulty:42, fanReward:900000,     bpm:125, noteCount:100, mp3:'https://www.dropbox.com/scl/fi/x1wampdcw4hq1hc0dms6d/BABYMONSTER-SHEESH-M_V.mp3?rlkey=mstnjvlkb2v9fnibj1iezey8k&st=zbfh2yhc&dl=1' },
+                { id:4, song:'DRIP',         icon:'💧', stat:'dance',    difficulty:58, fanReward:2200000,    bpm:135, noteCount:108, mp3:'https://www.dropbox.com/scl/fi/pffmq5w1r6zbidsu77l1h/BABYMONSTER-DRIP-M_V.mp3?rlkey=wktx0hsfzcph75yg9g7duv6oh&st=pdi07ax9&dl=1' },
+                { id:5, song:'We Go Up',     icon:'🚀', stat:'vocal',    difficulty:72, fanReward:5500000,    bpm:145, noteCount:116, mp3:'https://www.dropbox.com/scl/fi/947g7gqx3jgkx0edwvx1q/BABYMONSTER-WE-GO-UP-M_V.mp3?rlkey=i29zyr8lrq65f5xyj68w4tf0q&st=4zjis030&dl=1' },
+                { id:6, song:'Psycho',       icon:'🌀', stat:'charisma', difficulty:84, fanReward:14000000,   bpm:155, noteCount:124, mp3:'https://www.dropbox.com/scl/fi/dnoy9u3xnb5wzawy4dntw/BABYMONSTER-PSYCHO-M_V.mp3?rlkey=uoedih1a9jnpywbqyj1jn0tfl&st=pg9jlsdu&dl=1' },
+                { id:7, song:'CHOOM',        icon:'🔥', stat:'rap',      difficulty:95, fanReward:38000000,   bpm:170, noteCount:136, mp3:'https://www.dropbox.com/scl/fi/zg8o1kk5qduq03w8dbdk5/BABYMONSTER-CHOOM-M_V.mp3?rlkey=0vd5ets2ij9124igvm5c7n0rl&st=iqms9vji&dl=1' }
             ];
 
             let gameState = {
@@ -256,7 +254,6 @@
                 totalNotes:0, hitNotes:0, missedNotes:0, statUsed:'', stageDone:false
             };
 
-            // ---------- AUDIO SYSTEM ----------
             let audioCtx = null;
             const introMusic = document.getElementById('intro-music');
             const stageMusic = document.getElementById('stage-music');
@@ -294,13 +291,13 @@
 
             function playIntroMusic() {
                 if (!musicEnabled) return;
-                stopStageMusic(); // ensure stage music isn't playing
+                stopStageMusic();
                 introMusic.play().catch(() => {});
             }
 
             function playStageMusic(stage) {
                 if (!musicEnabled || !stage.mp3) return;
-                stopIntroMusic(); // stop intro if playing
+                stopIntroMusic();
                 stopStageMusic();
                 stageMusic.src = stage.mp3;
                 stageMusic.load();
@@ -312,7 +309,6 @@
                 musicEnabled = !musicEnabled;
                 if (musicEnabled) {
                     musicToggle.textContent = '🔊';
-                    // resume appropriate music depending on current screen
                     if (gameState.screen === 'select') playIntroMusic();
                     else if (gameState.screen === 'challenge' && gameState.gameRunning) playStageMusic(stages[gameState.currentStageIndex]);
                 } else {
@@ -356,7 +352,6 @@
                 Object.values(screens).forEach(s => s.classList.remove('active'));
                 if (screens[name]) screens[name].classList.add('active');
                 gameState.screen = name;
-                // Manage music based on screen
                 if (name === 'select') {
                     playIntroMusic();
                 } else {
@@ -468,11 +463,18 @@
 
             let animFrameId;
             function generatePattern(stage) {
-                const pattern = [], totalNotes = stage.noteCount, beatInterval = 60000 / stage.bpm, songDuration = totalNotes * beatInterval * 0.9;
-                for (let i=0; i<totalNotes; i++) { pattern.push({ time:(i/totalNotes)*songDuration, lane:Math.floor(Math.random()*4) }); }
-                pattern.sort((a,b)=>a.time-b.time);
-                for (let i=1; i<pattern.length; i++) { if (pattern[i].lane===pattern[i-1].lane && (pattern[i].time-pattern[i-1].time)<180) pattern[i].time = pattern[i-1].time+200; }
-                return pattern;
+                // Generate notes evenly spaced over a realistic song duration (~2.5 minutes)
+                const totalDurationMs = 150000; // 2.5 minutes in milliseconds
+                const noteCount = stage.noteCount; // based on BPM: 72 - 136 notes
+                const noteSpacing = totalDurationMs / noteCount;
+                const pattern = [];
+                for (let i = 0; i < noteCount; i++) {
+                    pattern.push({
+                        time: i * noteSpacing,
+                        lane: Math.floor(Math.random() * 4)
+                    });
+                }
+                return pattern; // already sorted by time
             }
 
             function startRhythmGame(stage) {
@@ -561,7 +563,7 @@
                 stopRhythmGame(); stopStageMusic();
                 const totalPossible = gameState.totalNotes*100*5, perf = gameState.score/Math.max(1,totalPossible);
                 let result = 'miss'; if (perf>0.7) result='perfect'; else if (perf>0.4) result='good';
-                const fansGained = Math.floor(stage.fanReward*(0.5+perf)*(1+gameState.playerStats[stage.stat]/200));
+                const fansGained = Math.floor(stage.fanReward*(0.5+perf)*(1+gameState.playerStats[stage.stat]/200)*(1+stage.difficulty/200));
                 gameState.fans += fansGained; gameState.completedStages.push(gameState.currentStageIndex);
                 gameState.stageResults.push({ stage:stage.id, result, fansGained, statUsed:stage.stat });
                 const boost = result==='perfect'?5:(result==='good'?3:1);
@@ -586,7 +588,10 @@
 
             function showGameComplete() {
                 const total = gameState.fans;
-                let rank = total>=500000?'🏆 LEGENDARY STAR':total>=300000?'🌟 SUPERSTAR':total>=150000?'💫 RISING STAR':total>=50000?'🎤 POPULAR IDOL':'🌱 ROOKIE';
+                let rank = total >= 50000000 ? '🏆 LEGENDARY STAR' :
+                           total >= 25000000 ? '🌟 SUPERSTAR' :
+                           total >= 10000000 ? '💫 RISING STAR' :
+                           total >= 1000000  ? '🎤 POPULAR IDOL' : '🌱 ROOKIE';
                 const member = members.find(m=>m.id===gameState.selectedMember);
                 overlay.innerHTML = `<div class="result-popup" id="final-popup" style="max-width:420px;"><span style="font-size:4em;">🎉</span><div class="result-text" style="color:var(--gold);">JOURNEY COMPLETE!</div><p style="color:var(--white);">${member.name} - ${rank}</p><p style="color:var(--gold);font-weight:700;font-size:1.2em;">${total.toLocaleString()} Fans</p><div style="margin:8px 0;text-align:left;font-size:0.75em;">${gameState.stageResults.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>${stages[i].song}</span><span style="color:${r.result==='perfect'?'#4cff8d':r.result==='good'?'#f0c060':'#ff6b6b'};">${r.result.toUpperCase()} (+${r.fansGained.toLocaleString()})</span></div>`).join('')}</div><p style="color:var(--white);">Final Stats: 🎤${gameState.playerStats.vocal} 💃${gameState.playerStats.dance} 🎙️${gameState.playerStats.rap} ✨${gameState.playerStats.charisma}</p><button class="btn btn-gold" id="btn-replay">🔄 PLAY AGAIN</button><button class="btn btn-secondary btn-sm" id="btn-title" style="display:block;width:100%;margin-top:8px;">← Title Screen</button></div>`;
                 overlay.classList.add('active');
