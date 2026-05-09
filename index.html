@@ -44,6 +44,16 @@
         @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-80px) scale(1.5); } }
         @keyframes bounceIn { 0% { transform:scale(0.3); opacity:0; } 50% { transform:scale(1.08); } 70% { transform:scale(0.94); } 100% { transform:scale(1); opacity:1; } }
 
+        /* Tap to start overlay */
+        #tap-to-start {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999; display: flex;
+            align-items: center; justify-content: center; flex-direction: column;
+            color: var(--white); text-align: center; cursor: pointer;
+        }
+        #tap-to-start h1 { font-size: 2.5em; color: var(--pink); }
+        #tap-to-start p { color: var(--subtle); margin-top: 12px; }
+
         .title-logo {
             font-size:2.8em; font-weight:900; letter-spacing:2px; text-align:center; line-height:1.1;
             margin-bottom:8px;
@@ -161,7 +171,6 @@
             cursor: pointer; font-size: 1.2em; color: var(--white);
         }
 
-        /* Leaderboard panel – fixed on right side */
         #leaderboard-panel {
             position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
             width: 220px; max-height: 80vh; overflow-y: auto;
@@ -170,10 +179,7 @@
             color: var(--white); font-size: 0.8em;
             box-shadow: 0 8px 25px rgba(0,0,0,0.6);
         }
-        #leaderboard-panel h3 {
-            color: var(--gold); text-align: center; margin-bottom: 8px;
-            font-size: 1em; letter-spacing: 1px;
-        }
+        #leaderboard-panel h3 { color: var(--gold); text-align: center; margin-bottom: 8px; font-size: 1em; letter-spacing: 1px; }
         #leaderboard-list .lb-entry {
             display: flex; justify-content: space-between; padding: 4px 0;
             border-bottom: 1px solid var(--border); font-size: 0.75em;
@@ -190,9 +196,15 @@
     </style>
 </head>
 <body>
+    <!-- TAP TO START OVERLAY (iOS audio fix) -->
+    <div id="tap-to-start">
+        <h1>BABYMONSTER</h1>
+        <p>Journey to Stardom</p>
+        <p style="margin-top: 20px; font-size: 1.2em;">👇 TAP TO START</p>
+    </div>
+
     <div class="music-toggle" id="music-toggle" title="Toggle stage music">🎵</div>
 
-    <!-- Fixed leaderboard panel (outside game container so always visible) -->
     <div id="leaderboard-panel" style="display: none;">
         <h3>🏆 TOP 5 LEGENDS</h3>
         <div id="leaderboard-list"></div>
@@ -279,16 +291,14 @@
                 speedFactor: 1500
             };
 
-            // ------ Leaderboard functions ------
+            // Leaderboard
             function getLeaderboard() {
                 const stored = localStorage.getItem('babymonster_leaderboard');
                 return stored ? JSON.parse(stored) : [];
             }
-
             function saveLeaderboard(entries) {
                 localStorage.setItem('babymonster_leaderboard', JSON.stringify(entries));
             }
-
             function postScore(playerName, memberName, fans, rankTitle) {
                 const entry = { name: playerName, member: memberName, score: fans, title: rankTitle };
                 const leaderboard = getLeaderboard();
@@ -296,7 +306,6 @@
                 leaderboard.sort((a,b) => b.score - a.score);
                 saveLeaderboard(leaderboard.slice(0,5));
             }
-
             function refreshLeaderboardPanel() {
                 const listEl = document.getElementById('leaderboard-list');
                 if (!listEl) return;
@@ -316,19 +325,29 @@
                 }
             }
 
-            // Show leaderboard on title screen and after post
-            function showLeaderboardOnTitle() {
-                refreshLeaderboardPanel();
-            }
-
-            // ------ Audio setup ------
+            // Audio system
             let audioCtx = null;
             const introMusic = document.getElementById('intro-music');
             const stageMusic = document.getElementById('stage-music');
             const musicToggle = document.getElementById('music-toggle');
             let musicEnabled = true;
+            let audioUnlocked = false;
 
-            function initAudio() { if (audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            function initAudio() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            async function unlockAudio() {
+                initAudio();
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+                const buffer = audioCtx.createBuffer(1, 1, 22050);
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioCtx.destination);
+                source.start(0);
+                audioUnlocked = true;
+            }
             function playNote(freq, duration, type='sine', vol=0.1) {
                 if (!audioCtx) return;
                 const osc = audioCtx.createOscillator();
@@ -344,44 +363,51 @@
             }
             function playHitSound(quality) {
                 initAudio();
-                if (quality === 'perfect') { playNote(880,0.1,'triangle',0.15); setTimeout(()=>playNote(1100,0.1,'triangle',0.1),50); }
-                else if (quality === 'good') playNote(660,0.1,'sine',0.12);
-                else playNote(200,0.1,'square',0.05);
+                if (quality === 'perfect') { playNote(880, 0.1, 'triangle', 0.15); setTimeout(() => playNote(1100, 0.1, 'triangle', 0.1), 50); }
+                else if (quality === 'good') { playNote(660, 0.1, 'sine', 0.12); }
+                else { playNote(200, 0.1, 'square', 0.05); }
             }
             function playTitleJingle() {
                 initAudio();
-                [523,659,784,880,1047].forEach((f,i)=>setTimeout(()=>playNote(f,0.15,'triangle',0.1),i*100));
+                const notes = [523, 659, 784, 880, 1047];
+                notes.forEach((freq, i) => { setTimeout(() => playNote(freq, 0.15, 'triangle', 0.1), i * 100); });
             }
-
-            function stopIntroMusic() { introMusic.pause(); introMusic.currentTime=0; }
-            function stopStageMusic() { stageMusic.pause(); stageMusic.currentTime=0; }
-            function playIntroMusic() { if (!musicEnabled) return; stopStageMusic(); introMusic.play().catch(()=>{}); }
+            function stopIntroMusic() { introMusic.pause(); introMusic.currentTime = 0; }
+            function stopStageMusic() { stageMusic.pause(); stageMusic.currentTime = 0; }
+            function playIntroMusic() {
+                if (!musicEnabled || !audioUnlocked) return;
+                stopStageMusic();
+                introMusic.play().catch(() => {});
+            }
             function playStageMusic(stage) {
-                if (!musicEnabled || !stage.mp3) return;
+                if (!musicEnabled || !stage.mp3 || !audioUnlocked) return;
                 stopIntroMusic(); stopStageMusic();
-                stageMusic.src = stage.mp3; stageMusic.load();
-                stageMusic.play().catch(()=>{});
+                stageMusic.src = stage.mp3;
+                stageMusic.load();
+                stageMusic.play().catch(() => {});
             }
 
-            musicToggle.addEventListener('click', ()=>{
+            musicToggle.addEventListener('click', () => {
                 initAudio();
                 musicEnabled = !musicEnabled;
                 if (musicEnabled) {
                     musicToggle.textContent = '🔊';
-                    if (gameState.screen==='select') playIntroMusic();
-                    else if (gameState.screen==='challenge' && gameState.gameRunning) playStageMusic(stages[gameState.currentStageIndex]);
+                    if (gameState.screen === 'select') playIntroMusic();
+                    else if (gameState.screen === 'challenge' && gameState.gameRunning) playStageMusic(stages[gameState.currentStageIndex]);
                 } else {
                     musicToggle.textContent = '🎵';
                     stopIntroMusic(); stopStageMusic();
                 }
             });
 
-            document.body.addEventListener('click', function once() {
-                initAudio(); playTitleJingle();
-                document.body.removeEventListener('click', once);
-            }, {once:true});
+            // Tap-to-start overlay
+            document.getElementById('tap-to-start').addEventListener('click', async () => {
+                await unlockAudio();
+                document.getElementById('tap-to-start').style.display = 'none';
+                showScreen('title');
+                playTitleJingle();
+            });
 
-            // ------ Screens ------
             const screens = {
                 title: document.getElementById('screen-title'),
                 select: document.getElementById('screen-select'),
@@ -390,7 +416,7 @@
             };
             const overlay = document.getElementById('overlay');
             const highway = document.getElementById('highway');
-            const lanes = [0,1,2,3].map(i=>document.getElementById('lane'+i));
+            const lanes = [0,1,2,3].map(i => document.getElementById('lane'+i));
             const scoreDisplay = document.getElementById('game-score');
             const comboDisplay = document.getElementById('combo-count');
             const fanCount = document.getElementById('fan-count');
@@ -407,14 +433,14 @@
             const stageHint = document.getElementById('stage-hint');
 
             function showScreen(name) {
-                Object.values(screens).forEach(s=>s.classList.remove('active'));
+                Object.values(screens).forEach(s => s.classList.remove('active'));
                 if (screens[name]) screens[name].classList.add('active');
                 gameState.screen = name;
                 if (name === 'select') playIntroMusic();
-                else { stopIntroMusic(); if (name!=='challenge') stopStageMusic(); }
+                else { stopIntroMusic(); if (name !== 'challenge') stopStageMusic(); }
                 if (name === 'title') {
-                    initAudio(); playTitleJingle();
-                    showLeaderboardOnTitle();
+                    refreshLeaderboardPanel();
+                    // Don't play jingle here – it's played on tap start already
                 }
             }
 
@@ -423,33 +449,34 @@
             btnQuitJourney.addEventListener('click', goToTitle);
             btnConfirm.addEventListener('click', confirmMember);
 
-            lanes.forEach((lane,idx)=>lane.addEventListener('click',()=>hitLane(idx)));
-            document.addEventListener('keydown', (e)=>{
-                if (gameState.screen!=='challenge'||!gameState.gameRunning) return;
-                const keyMap = {'d':0,'f':1,'j':2,'k':3};
+            lanes.forEach((lane, idx) => lane.addEventListener('click', () => hitLane(idx)));
+            document.addEventListener('keydown', (e) => {
+                if (gameState.screen !== 'challenge' || !gameState.gameRunning) return;
+                const keyMap = { 'd':0, 'f':1, 'j':2, 'k':3 };
                 if (e.key in keyMap) { e.preventDefault(); hitLane(keyMap[e.key]); }
             });
 
-            overlay.addEventListener('click', (e)=>{
-                if (e.target===overlay && !document.getElementById('result-popup')) hideOverlay();
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay && !document.getElementById('result-popup')) hideOverlay();
             });
 
-            memberGrid.addEventListener('click', (e)=>{
+            memberGrid.addEventListener('click', (e) => {
                 const card = e.target.closest('.member-card');
                 if (card) { const id = card.getAttribute('data-member'); if (id) selectMember(id); }
             });
 
-            journeyPath.addEventListener('click', (e)=>{
+            journeyPath.addEventListener('click', (e) => {
                 const node = e.target.closest('.stage-node.current');
-                if (node) { const idx = parseInt(node.getAttribute('data-stage'),10); if (!isNaN(idx)) startStage(idx); }
+                if (node) { const idx = parseInt(node.getAttribute('data-stage'), 10); if (!isNaN(idx)) startStage(idx); }
             });
 
             function startGame() {
-                gameState.selectedMember=null;
-                gameState.currentStageIndex=0; gameState.fans=0;
-                gameState.completedStages=[]; gameState.stageResults=[]; gameState.playerStats=null;
+                gameState.selectedMember = null;
+                gameState.currentStageIndex = 0; gameState.fans = 0;
+                gameState.completedStages = []; gameState.stageResults = []; gameState.playerStats = null;
                 renderMemberGrid();
-                btnConfirm.disabled=true; btnConfirm.textContent='✨ DEBUT WITH SELECTED MEMBER';
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = '✨ DEBUT WITH SELECTED MEMBER';
                 showScreen('select');
             }
 
@@ -457,44 +484,44 @@
 
             function confirmMember() {
                 if (!gameState.selectedMember) return;
-                const member = members.find(m=>m.id===gameState.selectedMember);
-                gameState.playerStats = {...member.stats};
-                gameState.fans=1000; gameState.currentStageIndex=0;
-                gameState.completedStages=[]; gameState.stageResults=[]; gameState.memberColor=member.color;
-                renderJourneyScreen(); showScreen('journey'); spawnParticles('🌟',12);
-                playNote(523,0.2,'triangle',0.1);
+                const member = members.find(m => m.id === gameState.selectedMember);
+                gameState.playerStats = { ...member.stats };
+                gameState.fans = 1000; gameState.currentStageIndex = 0;
+                gameState.completedStages = []; gameState.stageResults = [];
+                renderJourneyScreen(); showScreen('journey'); spawnParticles('🌟', 12);
+                playNote(523, 0.2, 'triangle', 0.1);
             }
 
             function renderMemberGrid() {
-                memberGrid.innerHTML = members.map(m=>{
-                    const sel = gameState.selectedMember===m.id?' selected':'';
+                memberGrid.innerHTML = members.map(m => {
+                    const sel = gameState.selectedMember === m.id ? ' selected' : '';
                     return `<div class="member-card${sel}" data-member="${m.id}" style="border-left:3px solid ${m.color}44;">
                         <div class="member-photo"><img src="${m.photo}" alt="${m.name}" loading="lazy"></div>
                         <div class="member-name">${m.name}</div><div class="member-role">${m.role}</div>
                         <div class="stat-row"><span class="stat-label-mini">🎤${m.stats.vocal}</span><span class="stat-label-mini">💃${m.stats.dance}</span><span class="stat-label-mini">🎙️${m.stats.rap}</span><span class="stat-label-mini">✨${m.stats.charisma}</span></div>
                     </div>`;
                 }).join('');
-                memberGrid.querySelectorAll('img').forEach(img=>img.addEventListener('error',function(){this.parentElement.innerHTML='🎤';}));
+                memberGrid.querySelectorAll('img').forEach(img => img.addEventListener('error', function(){ this.parentElement.innerHTML = '🎤'; }));
             }
 
             function selectMember(id) {
-                gameState.selectedMember=id;
-                document.querySelectorAll('.member-card').forEach(c=>c.classList.remove('selected'));
+                gameState.selectedMember = id;
+                document.querySelectorAll('.member-card').forEach(c => c.classList.remove('selected'));
                 const card = document.querySelector(`[data-member="${id}"]`);
                 if (card) card.classList.add('selected');
-                btnConfirm.disabled=false;
-                btnConfirm.textContent=`✨ DEBUT AS ${members.find(m=>m.id===id).name.toUpperCase()} ✨`;
-                playNote(440,0.1,'sine',0.08);
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = `✨ DEBUT AS ${members.find(m=>m.id===id).name.toUpperCase()} ✨`;
+                playNote(440, 0.1, 'sine', 0.08);
             }
 
             function renderJourneyScreen() {
-                const member = members.find(m=>m.id===gameState.selectedMember);
+                const member = members.find(m => m.id === gameState.selectedMember);
                 journeyHeader.innerHTML = `<div class="member-photo" style="margin:0 auto 8px; width:70px; height:85px;"><img src="${member.photo}" alt="${member.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></div><div style="font-weight:700;font-size:1.1em;letter-spacing:1px;color:var(--white);">${member.name}'s Journey</div><div style="color:var(--subtle);font-size:0.7em;letter-spacing:2px;">${member.role}</div>`;
-                journeyHeader.querySelector('img').addEventListener('error',function(){this.parentElement.innerHTML='👑';});
+                journeyHeader.querySelector('img').addEventListener('error', function(){ this.parentElement.innerHTML = '👑'; });
                 fanCount.textContent = gameState.fans.toLocaleString();
                 const s = gameState.playerStats;
                 statsDisplay.innerHTML = `<div class="stat-chip">🎤 Vocal <span class="stat-val">${s.vocal}</span></div><div class="stat-chip">💃 Dance <span class="stat-val">${s.dance}</span></div><div class="stat-chip">🎙️ Rap <span class="stat-val">${s.rap}</span></div><div class="stat-chip">✨ Charisma <span class="stat-val">${s.charisma}</span></div>`;
-                journeyPath.innerHTML = stages.map((st,i)=>{
+                journeyPath.innerHTML = stages.map((st,i) => {
                     let cls='locked', txt='🔒', lbl='Locked';
                     if (gameState.completedStages.includes(i)) { cls='completed'; txt='✅'; lbl='done'; }
                     else if (i===gameState.currentStageIndex) { cls='current'; txt='🎸'; lbl='now'; }
@@ -507,144 +534,125 @@
                 if (index !== gameState.currentStageIndex || gameState.gameRunning) return;
                 const stage = stages[index];
                 gameState.statUsed = stage.stat;
-                // Speed factor: lower = faster (notes travel quicker)
                 gameState.speedFactor = Math.max(300, 1500 - stage.difficulty * 12);
                 songNameEl.textContent = '🎵 ' + stage.song;
                 challengeStatEl.textContent = `Required: ${stage.stat.toUpperCase()} (Your stat: ${gameState.playerStats[stage.stat]})`;
                 stageHint.textContent = 'Tap the lanes when notes hit the golden zone!';
                 showScreen('challenge'); startRhythmGame(stage);
-                playNote(660,0.1,'triangle',0.1);
+                playNote(660, 0.1, 'triangle', 0.1);
                 playStageMusic(stage);
             }
 
             let animFrameId;
             function generatePattern(stage) {
-                const totalDurationMs = 60000; // 1 minute exactly
+                const totalDurationMs = 60000; // 1 minute
                 const noteSpacing = totalDurationMs / stage.noteCount;
                 const pattern = [];
-                for (let i=0; i<stage.noteCount; i++) {
-                    pattern.push({ time: i * noteSpacing, lane: Math.floor(Math.random()*4) });
+                for (let i = 0; i < stage.noteCount; i++) {
+                    pattern.push({ time: i * noteSpacing, lane: Math.floor(Math.random() * 4) });
                 }
                 return pattern;
             }
 
             function startRhythmGame(stage) {
                 stopRhythmGame();
-                gameState.gameRunning=true; gameState.stageDone=false;
+                gameState.gameRunning = true; gameState.stageDone = false;
                 gameState.pattern = generatePattern(stage);
-                gameState.notes = [];
-                gameState.startTime = performance.now();
-                gameState.score=0; gameState.combo=0; gameState.maxCombo=0;
-                gameState.totalNotes=stage.noteCount; gameState.hitNotes=0; gameState.missedNotes=0;
-                scoreDisplay.textContent='0'; comboDisplay.textContent='0';
-                lanes.forEach(l=>l.innerHTML='');
+                gameState.notes = []; gameState.startTime = performance.now();
+                gameState.score = 0; gameState.combo = 0; gameState.maxCombo = 0;
+                gameState.totalNotes = stage.noteCount; gameState.hitNotes = 0; gameState.missedNotes = 0;
+                scoreDisplay.textContent = '0'; comboDisplay.textContent = '0';
+                lanes.forEach(l => l.innerHTML = '');
                 requestAnimationFrame(gameLoop);
             }
 
             function stopRhythmGame() {
-                gameState.gameRunning=false;
+                gameState.gameRunning = false;
                 if (animFrameId) cancelAnimationFrame(animFrameId);
-                gameState.notes=[];
+                gameState.notes = [];
             }
 
             function spawnNote(nd) {
-                const laneEl = lanes[nd.lane];
-                const note = document.createElement('div'); note.className='note';
-                note.style.top='-30px'; note.dataset.spawnTime=nd.time;
+                const laneEl = lanes[nd.lane], note = document.createElement('div'); note.className = 'note';
+                note.style.top = '-30px'; note.dataset.spawnTime = nd.time;
                 laneEl.appendChild(note);
-                gameState.notes.push({el:note, lane:nd.lane, time:nd.time, hit:false});
+                gameState.notes.push({ el:note, lane:nd.lane, time:nd.time, hit:false });
             }
 
-            const HZ_TOP=0.78, HZ_BOT=0.92;
+            const HZ_TOP = 0.78, HZ_BOT = 0.92;
             const hHeight = () => highway.clientHeight;
 
             function gameLoop(now) {
                 if (!gameState.gameRunning) return;
-                const elapsed = now - gameState.startTime;
-                const stage = stages[gameState.currentStageIndex];
-                const stat = gameState.playerStats[stage.stat];
-                const bonus = (stat-40)/100;
-                const perfectW = 35 + bonus*20;
-                const goodW = 70 + bonus*15;
+                const elapsed = now - gameState.startTime, stage = stages[gameState.currentStageIndex];
+                const stat = gameState.playerStats[stage.stat], bonus = (stat-40)/100;
+                const perfectW = 35 + bonus*20, goodW = 70 + bonus*15;
                 while (gameState.pattern.length && gameState.pattern[0].time <= elapsed) spawnNote(gameState.pattern.shift());
                 const hh = hHeight();
-                gameState.notes.forEach(n=>{
+                gameState.notes.forEach(n => {
                     if (n.hit) return;
                     const noteAge = elapsed - n.time;
                     const travelDistance = (noteAge / gameState.speedFactor) * hh * 0.9;
                     const topPos = travelDistance - 30;
                     n.el.style.top = topPos + 'px';
                     if (topPos > hh * HZ_BOT + 20) {
-                        n.hit=true; n.el.style.opacity='0.3';
-                        gameState.missedNotes++; gameState.combo=0;
-                        comboDisplay.textContent=gameState.combo;
-                        setTimeout(()=>n.el.remove(),100);
+                        n.hit = true; n.el.style.opacity = '0.3';
+                        gameState.missedNotes++; gameState.combo = 0;
+                        comboDisplay.textContent = gameState.combo;
+                        setTimeout(() => n.el.remove(), 100);
                     }
                 });
-                if (gameState.pattern.length===0 && gameState.notes.every(n=>n.hit) && !gameState.stageDone) {
-                    gameState.stageDone=true; finishStage(stage);
+                if (gameState.pattern.length === 0 && gameState.notes.every(n => n.hit) && !gameState.stageDone) {
+                    gameState.stageDone = true; finishStage(stage);
                 }
                 animFrameId = requestAnimationFrame(gameLoop);
             }
 
             function hitLane(laneIdx) {
                 if (!gameState.gameRunning) return;
-                const stage = stages[gameState.currentStageIndex];
-                const stat = gameState.playerStats[stage.stat];
-                const bonus = (stat-40)/100;
-                const perfectW = 35 + bonus*20;
-                const goodW = 70 + bonus*15;
-                const hh = hHeight();
-                const hitCenter = (hh*HZ_TOP + hh*HZ_BOT)/2;
+                const stage = stages[gameState.currentStageIndex], stat = gameState.playerStats[stage.stat];
+                const bonus = (stat-40)/100, perfectW = 35+bonus*20, goodW = 70+bonus*15;
+                const hh = hHeight(), hitCenter = (hh*HZ_TOP+hh*HZ_BOT)/2;
                 let bestNote=null, bestDist=Infinity;
-                gameState.notes.forEach(n=>{
+                gameState.notes.forEach(n => {
                     if (n.hit || n.lane!==laneIdx) return;
-                    const top = parseFloat(n.el.style.top)||0;
-                    const noteCenter = top+12;
+                    const top = parseFloat(n.el.style.top)||0, noteCenter = top+12;
                     if (noteCenter > hh*HZ_TOP-40 && noteCenter < hh*HZ_BOT+40) {
                         const dist = Math.abs(noteCenter - hitCenter);
                         if (dist < bestDist) { bestDist=dist; bestNote=n; }
                     }
                 });
                 if (bestNote) {
-                    bestNote.hit=true;
+                    bestNote.hit = true;
                     if (bestDist <= perfectW) {
-                        gameState.score += 100 * (gameState.combo>0?gameState.combo:1);
-                        gameState.combo++;
+                        gameState.score += 100*(gameState.combo>0?gameState.combo:1); gameState.combo++;
                         bestNote.el.classList.add('perfect');
                         playHitSound('perfect');
                         spawnParticles('✨',4);
                     } else if (bestDist <= goodW) {
-                        gameState.score += 50 * (gameState.combo>0?gameState.combo:1);
-                        gameState.combo++;
+                        gameState.score += 50*(gameState.combo>0?gameState.combo:1); gameState.combo++;
                         bestNote.el.classList.add('good');
                         playHitSound('good');
                     } else {
                         gameState.score += 10; gameState.combo=0;
                         playHitSound('miss');
                     }
-                    gameState.hitNotes++;
-                    if (gameState.combo>gameState.maxCombo) gameState.maxCombo=gameState.combo;
-                    comboDisplay.textContent=gameState.combo;
-                    scoreDisplay.textContent=gameState.score;
-                    setTimeout(()=>bestNote.el.remove(),80);
+                    gameState.hitNotes++; if (gameState.combo>gameState.maxCombo) gameState.maxCombo=gameState.combo;
+                    comboDisplay.textContent = gameState.combo; scoreDisplay.textContent = gameState.score;
+                    setTimeout(() => bestNote.el.remove(), 80);
                 } else {
-                    gameState.combo=0; comboDisplay.textContent=gameState.combo;
-                    playNote(100,0.05,'square',0.03);
+                    gameState.combo = 0; comboDisplay.textContent = gameState.combo;
+                    playNote(100, 0.05, 'square', 0.03);
                 }
             }
 
             function finishStage(stage) {
                 stopRhythmGame(); stopStageMusic();
-                const totalPossible = gameState.totalNotes*100*5;
-                const perf = gameState.score/Math.max(1,totalPossible);
-                let result = 'miss';
-                if (perf>0.7) result='perfect';
-                else if (perf>0.4) result='good';
-                const fansGained = Math.floor(stage.fanReward * (0.5+perf) * (1+gameState.playerStats[stage.stat]/200) * (1+stage.difficulty/200));
-                gameState.fans += fansGained;
-                gameState.completedStages.push(gameState.currentStageIndex);
-                gameState.stageResults.push({stage:stage.id, result, fansGained, statUsed:stage.stat});
+                const totalPossible = gameState.totalNotes*100*5, perf = gameState.score/Math.max(1,totalPossible);
+                let result = 'miss'; if (perf>0.7) result='perfect'; else if (perf>0.4) result='good';
+                const fansGained = Math.floor(stage.fanReward*(0.5+perf)*(1+gameState.playerStats[stage.stat]/200)*(1+stage.difficulty/200));
+                gameState.fans += fansGained; gameState.completedStages.push(gameState.currentStageIndex);
+                gameState.stageResults.push({ stage:stage.id, result, fansGained, statUsed:stage.stat });
                 const boost = result==='perfect'?5:(result==='good'?3:1);
                 gameState.playerStats[stage.stat] = Math.min(99, gameState.playerStats[stage.stat]+boost);
                 const emoji = result==='perfect'?'🌟':(result==='good'?'👍':'😞');
@@ -658,20 +666,19 @@
             }
 
             function continueJourney() {
-                hideOverlay();
-                gameState.currentStageIndex = gameState.completedStages.length;
+                hideOverlay(); gameState.currentStageIndex = gameState.completedStages.length;
                 if (gameState.currentStageIndex >= stages.length) showGameComplete();
                 else { renderJourneyScreen(); showScreen('journey'); }
             }
 
-            function hideOverlay() { overlay.classList.remove('active'); overlay.innerHTML=''; }
+            function hideOverlay() { overlay.classList.remove('active'); overlay.innerHTML = ''; }
 
             function showGameComplete() {
                 const total = gameState.fans;
-                let rank = total>=50000000?'🏆 LEGENDARY STAR':
-                           total>=25000000?'🌟 SUPERSTAR':
-                           total>=10000000?'💫 RISING STAR':
-                           total>=1000000?'🎤 POPULAR IDOL':'🌱 ROOKIE';
+                let rank = total >= 50000000 ? '🏆 LEGENDARY STAR' :
+                           total >= 25000000 ? '🌟 SUPERSTAR' :
+                           total >= 10000000 ? '💫 RISING STAR' :
+                           total >= 1000000  ? '🎤 POPULAR IDOL' : '🌱 ROOKIE';
                 const member = members.find(m=>m.id===gameState.selectedMember);
                 overlay.innerHTML = `
                     <div class="result-popup" id="final-popup" style="max-width:480px;">
@@ -695,9 +702,7 @@
                     const nameInput = document.getElementById('player-name-input');
                     const playerName = nameInput.value.trim() || 'BABYMONSTER Fan';
                     postScore(playerName, member.name, total, rank);
-                    // Update panel immediately
                     refreshLeaderboardPanel();
-                    // Hide input and show success message
                     document.getElementById('name-input-area').innerHTML = '<p style="color:var(--success);">✅ Score posted! Check the leaderboard.</p>';
                 });
                 document.getElementById('btn-replay').addEventListener('click', startGame);
@@ -709,25 +714,21 @@
             function spawnParticles(emojiStr, count) {
                 const emojis = [...emojiStr];
                 for (let i=0; i<count; i++) {
-                    setTimeout(()=>{
-                        const p=document.createElement('div'); p.className='particle';
-                        p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-                        p.style.left=(20+Math.random()*60)+'%'; p.style.top=(30+Math.random()*40)+'%';
-                        p.style.animationDuration=(0.6+Math.random()*1.2)+'s';
+                    setTimeout(() => {
+                        const p = document.createElement('div'); p.className = 'particle';
+                        p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+                        p.style.left = (20+Math.random()*60)+'%'; p.style.top = (30+Math.random()*40)+'%';
+                        p.style.animationDuration = (0.6+Math.random()*1.2)+'s';
                         document.body.appendChild(p);
-                        setTimeout(()=>p.remove(),1500);
-                    },i*30);
+                        setTimeout(() => p.remove(), 1500);
+                    }, i*30);
                 }
             }
 
-            window.addEventListener('load', ()=>{
-                setTimeout(()=>{ initAudio(); playTitleJingle(); },500);
-                refreshLeaderboardPanel();
-                showScreen('title');
-            });
-
+            // Initial load – don't show game until tap
+            document.getElementById('tap-to-start').style.display = 'flex';
+            refreshLeaderboardPanel();
             renderMemberGrid();
-            showScreen('title');
         })();
     </script>
 </body>
