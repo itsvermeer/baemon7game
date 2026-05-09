@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+    <title>BABYMONSTER · Journey to Stardom</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a2e;
+            --pink: #ff2d78;
+            --gold: #f0c060;
+            --white: #f5f5f5;
+            --text: #e0e0e0;
+            --subtle: #888;
+            --success: #4cff8d;
+            --danger: #ff4757;
+            --card-bg: #1e1e35;
+            --border: #2a2a45;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(255,45,120,0.12) 0%, transparent 60%),
+                              radial-gradient(ellipse at 20% 80%, rgba(240,192,96,0.06) 0%, transparent 50%),
+                              radial-gradient(ellipse at 80% 80%, rgba(255,107,157,0.05) 0%, transparent 50%);
+            overflow-x: hidden;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        #game-container {
+            width: 100%; max-width: 520px; min-height: 100vh;
+            padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .screen { display: none; flex-direction: column; align-items: center; width: 100%; animation: fadeSlideIn 0.4s ease-out; }
+        .screen.active { display: flex; }
+        @keyframes fadeSlideIn { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes shimmer { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
+        @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-80px) scale(1.5); } }
+        @keyframes bounceIn { 0% { transform:scale(0.3); opacity:0; } 50% { transform:scale(1.08); } 70% { transform:scale(0.94); } 100% { transform:scale(1); opacity:1; } }
+
+        .title-logo {
+            font-size:2.8em; font-weight:900; letter-spacing:2px; text-align:center; line-height:1.1;
+            margin-bottom:8px;
+            background: linear-gradient(135deg, #ff2d78, #ff6b9d, #f0c060, #ff2d78);
+            background-size: 300% 300%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s ease infinite;
+        }
+        .title-sub { font-size:1em; letter-spacing:6px; color:var(--gold); text-transform:uppercase; margin-bottom:32px; opacity:0.85; }
+        .title-decor { width:60px; height:3px; background:var(--pink); border-radius:2px; margin:16px 0; }
+        .btn {
+            padding:14px 40px; border:none; border-radius:50px; font-size:1.05em; font-weight:700;
+            cursor:pointer; letter-spacing:1px; transition:all 0.3s; text-transform:uppercase;
+            font-family:inherit; outline:none; position:relative; overflow:hidden;
+        }
+        .btn-primary { background:linear-gradient(135deg, #ff2d78, #e81c5c); color:#fff; box-shadow:0 6px 25px rgba(255,45,120,0.4); }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 10px 35px rgba(255,45,120,0.6); }
+        .btn-primary:active { transform:scale(0.96); transition:0.1s; }
+        .btn-secondary { background:transparent; color:var(--white); border:2px solid var(--border); }
+        .btn-secondary:hover { border-color:var(--pink); background:rgba(255,45,120,0.08); }
+        .btn-sm { padding:8px 20px; font-size:0.85em; letter-spacing:0.5px; }
+        .btn-gold { background:linear-gradient(135deg, #f0c060, #d4a030); color:#1a1a1a; box-shadow:0 6px 25px rgba(240,192,96,0.35); }
+        .btn-gold:hover { box-shadow:0 10px 35px rgba(240,192,96,0.55); transform:translateY(-2px); }
+        .btn:disabled { opacity:0.4; cursor:not-allowed; pointer-events:none; }
+
+        .section-title { font-size:1.3em; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--white); margin-bottom:4px; text-align:center; }
+        .section-subtitle { font-size:0.8em; color:var(--subtle); letter-spacing:2px; margin-bottom:20px; text-align:center; }
+
+        .member-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-height:58vh; overflow-y:auto; padding:8px 4px; }
+        .member-grid::-webkit-scrollbar { width:3px; }
+        .member-grid::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
+        .member-card {
+            background:var(--card-bg); border:2px solid var(--border); border-radius:18px;
+            padding:14px 10px 10px; cursor:pointer; transition:all 0.3s; text-align:center;
+            display:flex; flex-direction:column; align-items:center;
+        }
+        .member-card:hover { border-color:var(--pink); transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,0.4); }
+        .member-card.selected { border-color:var(--gold) !important; box-shadow:0 0 25px rgba(240,192,96,0.5) !important; background:#1e1e38; }
+        .member-photo { width:90px; height:110px; border-radius:12px; overflow:hidden; margin-bottom:8px; background:#2a2a40; display:flex; align-items:center; justify-content:center; font-size:2.5em; }
+        .member-photo img { width:100%; height:100%; object-fit:cover; }
+        .member-name { font-weight:700; font-size:1.05em; letter-spacing:1px; color:var(--white); }
+        .member-role { font-size:0.7em; color:var(--subtle); letter-spacing:2px; text-transform:uppercase; }
+        .stat-row { display:flex; justify-content:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+        .stat-label-mini { font-size:0.65em; color:var(--subtle); letter-spacing:1px; }
+
+        .journey-path { display:flex; flex-direction:column; gap:8px; width:100%; max-width:400px; margin:16px 0; }
+        .stage-node { display:flex; align-items:center; gap:14px; padding:12px 16px; border-radius:12px; background:var(--card-bg); border:2px solid var(--border); transition:all 0.3s; }
+        .stage-node.completed { border-color:#4cff8d55; background:#1a2a1f; }
+        .stage-node.current { border-color:var(--pink); box-shadow:0 0 20px rgba(255,45,120,0.3); cursor:pointer; }
+        .stage-node.locked { opacity:0.45; filter:grayscale(0.5); }
+        .stage-icon { font-size:1.6em; width:40px; text-align:center; flex-shrink:0; }
+        .stage-info { flex:1; }
+        .stage-name { font-weight:700; font-size:0.9em; color:var(--white); }
+        .stage-desc { font-size:0.7em; color:var(--subtle); }
+        .stage-status { font-size:0.7em; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+        .stage-status.done { color:var(--success); }
+        .stage-status.now { color:var(--pink); }
+
+        .challenge-container {
+            background: #111; border:2px solid var(--border); border-radius:20px;
+            padding:20px 12px; width:100%; text-align:center;
+        }
+        .song-title { font-size:1.4em; font-weight:700; color:var(--gold); letter-spacing:2px; margin-bottom:4px; }
+        .song-stat { color:var(--pink-glow); font-size:0.8em; letter-spacing:2px; margin-bottom:12px; }
+        .highway {
+            display:flex; justify-content:center; gap:8px; position:relative;
+            height:280px; background:#0a0a0a; border-radius:12px; padding:10px 4px;
+            margin:12px 0; overflow:hidden;
+        }
+        .lane {
+            flex:1; background:rgba(255,255,255,0.05); border-radius:8px;
+            position:relative; cursor:pointer;
+            border:1px solid rgba(255,255,255,0.1);
+        }
+        .lane:active { background:rgba(255,255,255,0.1); }
+        .hit-zone {
+            position:absolute; bottom:16px; left:0; width:100%; height:10%;
+            background:rgba(255,215,0,0.2); border-top:2px solid var(--gold);
+            border-bottom:2px solid var(--gold); pointer-events:none;
+        }
+        .note {
+            position:absolute; width:80%; left:10%; height:24px; border-radius:6px;
+            background: var(--pink); box-shadow:0 0 12px var(--pink-glow);
+            transition: background 0.1s;
+        }
+        .note.perfect { background:#4cff8d; box-shadow:0 0 15px #4cff8d; }
+        .note.good { background:#f0c060; box-shadow:0 0 10px #f0c060; }
+        .combo-display { font-weight:700; font-size:1.1em; margin:6px 0; letter-spacing:1px; }
+        .score-display { color:var(--gold); font-weight:700; }
+
+        .result-popup {
+            position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+            background:#1a1a2e; border:2px solid var(--gold); border-radius:20px;
+            padding:28px 24px; text-align:center; z-index:100;
+            animation:bounceIn 0.5s ease-out; box-shadow:0 20px 60px rgba(0,0,0,0.8);
+            max-width:380px; width:90%;
+        }
+        .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:90; display:none; }
+        .overlay.active { display:block; }
+
+        .stats-bar { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:10px 0; }
+        .stat-chip { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:0.75em; letter-spacing:1px; display:flex; align-items:center; gap:6px; }
+        .stat-chip .stat-val { font-weight:700; color:var(--gold); }
+        .fan-counter { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:8px 18px; display:flex; align-items:center; gap:8px; font-weight:700; letter-spacing:1px; font-size:0.9em; }
+        .fan-counter .fan-icon { font-size:1.3em; }
+        .fan-counter .fan-num { color:var(--gold); font-size:1.1em; }
+
+        .particle { position:fixed; pointer-events:none; z-index:200; font-size:1.5em; animation:floatUp 1s ease-out forwards; }
+
+        .music-toggle {
+            position: fixed; top: 10px; right: 10px; z-index: 300;
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.2em; color: var(--white);
+        }
+
+        @media (max-width:400px) {
+            .title-logo { font-size:2.2em; }
+            .member-grid { gap:8px; }
+            .member-card { padding:10px 6px 8px; }
+            .member-photo { width:70px; height:85px; }
+            .btn { padding:12px 28px; font-size:0.9em; }
+            .highway { height:240px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="music-toggle" id="music-toggle" title="Toggle background music">🎵</div>
+    <div id="game-container">
+        <!-- screens as before -->
+        <div class="screen active" id="screen-title">
+            <div class="title-logo">BABYMONSTER</div>
+            <div class="title-sub">Journey to Stardom</div>
+            <div class="title-decor"></div>
+            <p style="color:var(--subtle);text-align:center;font-size:0.85em;margin-bottom:24px;">
+                Choose your member and conquer the K-Pop world! Hit the notes to the beat.
+            </p>
+            <button class="btn btn-primary" id="btn-start">✨ START JOURNEY</button>
+            <p style="color:var(--subtle);font-size:0.65em;margin-top:12px;">7 MEMBERS · 7 SONGS · 1 DREAM</p>
+        </div>
+
+        <div class="screen" id="screen-select">
+            <div class="section-title">Choose Your Member</div>
+            <div class="section-subtitle">Official photos · Unique strengths</div>
+            <div class="member-grid" id="member-grid"></div>
+            <button class="btn btn-primary" id="btn-confirm-member" disabled style="margin-top:16px;">✨ DEBUT WITH SELECTED MEMBER</button>
+            <button class="btn btn-secondary btn-sm" id="btn-back-select">← Back</button>
+        </div>
+
+        <div class="screen" id="screen-journey">
+            <div id="journey-header" style="text-align:center;margin-bottom:8px;"></div>
+            <div class="fan-counter"><span class="fan-icon">💜</span> Fans: <span class="fan-num" id="fan-count">0</span></div>
+            <div class="stats-bar" id="stats-display"></div>
+            <div class="section-title" style="font-size:1em;margin-top:12px;">📍 Your Journey</div>
+            <div class="journey-path" id="journey-path"></div>
+            <button class="btn btn-secondary btn-sm" id="btn-quit-journey">← Quit Journey</button>
+        </div>
+
+        <div class="screen" id="screen-challenge">
+            <div class="challenge-container">
+                <div class="song-title" id="song-name">🎵 Dream</div>
+                <div class="song-stat" id="challenge-stat">DANCE</div>
+                <div class="score-display">Score: <span id="game-score">0</span></div>
+                <div class="combo-display">Combo: <span id="combo-count">0</span>x</div>
+                <div class="highway" id="highway">
+                    <div class="lane" id="lane0"></div>
+                    <div class="lane" id="lane1"></div>
+                    <div class="lane" id="lane2"></div>
+                    <div class="lane" id="lane3"></div>
+                    <div class="hit-zone"></div>
+                </div>
+                <p style="color:var(--subtle);font-size:0.7em;" id="stage-hint">Tap the lanes when notes hit the golden zone!</p>
+            </div>
+        </div>
+
+        <div class="overlay" id="overlay"></div>
+    </div>
+
+    <!-- Background music (replace src with any BABYMONSTER MP3 URL) -->
+    <audio id="bg-music" loop preload="none" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+    <script>
+        (function() {
+            // ---------- MEMBER DATA ----------
+            const members = [
+                { id:'ruka', name:'Ruka', role:'All-Rounder', color:'#ff6b6b', photo:'https://static.asiachan.com/Kawai.Ruka.full.485715.jpg', stats:{ vocal:72, dance:82, rap:70, charisma:76 } },
+                { id:'pharita', name:'Pharita', role:'Vocal Queen', color:'#ffd93d', photo:'https://static.asiachan.com/Pharita.full.328616.jpg', stats:{ vocal:90, dance:68, rap:55, charisma:78 } },
+                { id:'asa', name:'Asa', role:'Rap Master', color:'#6bcb77', photo:'https://static.asiachan.com/Enami.Asa.full.483945.jpg', stats:{ vocal:62, dance:80, rap:92, charisma:72 } },
+                { id:'ahyeon', name:'Ahyeon', role:'Center', color:'#ff69b4', photo:'https://static.asiachan.com/Jung.Ahyeon.full.478777.jpg', stats:{ vocal:88, dance:78, rap:65, charisma:90 } },
+                { id:'rami', name:'Rami', role:'Vocal Power', color:'#4d96ff', photo:'https://yg-life.com/wp-content/uploads/2023/11/20afda20d7a1566b5a6ac20d3760d2b3-e1700641984156.jpg', stats:{ vocal:94, dance:60, rap:50, charisma:80 } },
+                { id:'rora', name:'Rora', role:'Melody Maker', color:'#9b59b6', photo:'https://static.asiachan.com/Rora.full.485703.jpg', stats:{ vocal:85, dance:70, rap:58, charisma:75 } },
+                { id:'chiquita', name:'Chiquita', role:'Dance Machine', color:'#ff8c42', photo:'https://static.asiachan.com/Chiquita.full.485709.jpg', stats:{ vocal:68, dance:95, rap:60, charisma:85 } }
+            ];
+            const stages = [
+                { id:1, name:'Dream', icon:'💭', stat:'dance', difficulty:15, fanReward:5000, song:'Dream', bpm:90, noteCount:20 },
+                { id:2, name:'Batter Up', icon:'⚾', stat:'vocal', difficulty:28, fanReward:8000, song:'Batter Up', bpm:110, noteCount:24 },
+                { id:3, name:'SHEESH', icon:'😤', stat:'charisma', difficulty:42, fanReward:15000, song:'SHEESH', bpm:125, noteCount:28 },
+                { id:4, name:'DRIP', icon:'💧', stat:'dance', difficulty:58, fanReward:25000, song:'DRIP', bpm:135, noteCount:30 },
+                { id:5, name:'We Go Up', icon:'🚀', stat:'vocal', difficulty:72, fanReward:50000, song:'We Go Up', bpm:145, noteCount:34 },
+                { id:6, name:'Psycho', icon:'🌀', stat:'charisma', difficulty:84, fanReward:100000, song:'Psycho', bpm:155, noteCount:38 },
+                { id:7, name:'CHOOM', icon:'🔥', stat:'rap', difficulty:95, fanReward:200000, song:'CHOOM', bpm:170, noteCount:42 }
+            ];
+
+            let gameState = {
+                screen:'title', selectedMember:null, currentStageIndex:0, fans:0,
+                playerStats:null, memberColor:'#ff2d78', completedStages:[], stageResults:[],
+                gameRunning:false, notes:[], pattern:[], startTime:0, score:0, combo:0, maxCombo:0,
+                totalNotes:0, hitNotes:0, missedNotes:0, statUsed:'', stageDone:false
+            };
+
+            // ---------- AUDIO SYSTEM ----------
+            let audioCtx = null;
+            const bgMusic = document.getElementById('bg-music');
+            const musicToggle = document.getElementById('music-toggle');
+            let musicPlaying = false;
+
+            // Initialize audio context on first user interaction
+            function initAudio() {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Play a simple synth note
+            function playNote(freq, duration, type='sine', vol=0.1) {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            }
+
+            function playHitSound(quality) {
+                initAudio();
+                if (quality === 'perfect') {
+                    playNote(880, 0.1, 'triangle', 0.15);
+                    setTimeout(() => playNote(1100, 0.1, 'triangle', 0.1), 50);
+                } else if (quality === 'good') {
+                    playNote(660, 0.1, 'sine', 0.12);
+                } else {
+                    playNote(200, 0.1, 'square', 0.05);
+                }
+            }
+
+            function playTitleJingle() {
+                initAudio();
+                const notes = [523, 659, 784, 880, 1047]; // C5, E5, G5, A5, C6
+                notes.forEach((freq, i) => {
+                    setTimeout(() => playNote(freq, 0.15, 'triangle', 0.1), i * 100);
+                });
+            }
+
+            // Music toggle
+            musicToggle.addEventListener('click', () => {
+                initAudio();
+                if (musicPlaying) {
+                    bgMusic.pause();
+                    musicToggle.textContent = '🎵';
+                    musicPlaying = false;
+                } else {
+                    bgMusic.play().then(() => {
+                        musicToggle.textContent = '🔊';
+                        musicPlaying = true;
+                    }).catch(() => {
+                        alert('Click anywhere first to enable audio, then try again.');
+                    });
+                }
+            });
+
+            // Auto-play title jingle on first load (requires user gesture)
+            document.body.addEventListener('click', function once() {
+                initAudio();
+                playTitleJingle();
+                document.body.removeEventListener('click', once);
+            }, { once: true });
+
+            // ---------- DOM ELEMENTS ----------
+            const screens = {
+                title: document.getElementById('screen-title'),
+                select: document.getElementById('screen-select'),
+                journey: document.getElementById('screen-journey'),
+                challenge: document.getElementById('screen-challenge')
+            };
+            const overlay = document.getElementById('overlay');
+            const highway = document.getElementById('highway');
+            const lanes = [0,1,2,3].map(i => document.getElementById('lane'+i));
+            const scoreDisplay = document.getElementById('game-score');
+            const comboDisplay = document.getElementById('combo-count');
+            const fanCount = document.getElementById('fan-count');
+            const journeyHeader = document.getElementById('journey-header');
+            const statsDisplay = document.getElementById('stats-display');
+            const journeyPath = document.getElementById('journey-path');
+            const memberGrid = document.getElementById('member-grid');
+            const btnConfirm = document.getElementById('btn-confirm-member');
+            const btnStart = document.getElementById('btn-start');
+            const btnBackSelect = document.getElementById('btn-back-select');
+            const btnQuitJourney = document.getElementById('btn-quit-journey');
+            const songNameEl = document.getElementById('song-name');
+            const challengeStatEl = document.getElementById('challenge-stat');
+            const stageHint = document.getElementById('stage-hint');
+
+            function showScreen(name) {
+                Object.values(screens).forEach(s => s.classList.remove('active'));
+                if (screens[name]) screens[name].classList.add('active');
+                gameState.screen = name;
+                if (name === 'title') {
+                    initAudio();
+                    playTitleJingle();
+                }
+            }
+
+            // ---------- EVENT LISTENERS ----------
+            btnStart.addEventListener('click', startGame);
+            btnBackSelect.addEventListener('click', goToTitle);
+            btnQuitJourney.addEventListener('click', goToTitle);
+            btnConfirm.addEventListener('click', confirmMember);
+
+            lanes.forEach((lane, idx) => lane.addEventListener('click', () => hitLane(idx)));
+            document.addEventListener('keydown', (e) => {
+                if (gameState.screen !== 'challenge' || !gameState.gameRunning) return;
+                const keyMap = { 'd':0, 'f':1, 'j':2, 'k':3 };
+                if (e.key in keyMap) { e.preventDefault(); hitLane(keyMap[e.key]); }
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay && !document.getElementById('result-popup')) hideOverlay();
+            });
+
+            memberGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.member-card');
+                if (card) { const id = card.getAttribute('data-member'); if (id) selectMember(id); }
+            });
+
+            journeyPath.addEventListener('click', (e) => {
+                const node = e.target.closest('.stage-node.current');
+                if (node) { const idx = parseInt(node.getAttribute('data-stage'), 10); if (!isNaN(idx)) startStage(idx); }
+            });
+
+            function startGame() {
+                gameState.selectedMember = null;
+                gameState.currentStageIndex = 0; gameState.fans = 0;
+                gameState.completedStages = []; gameState.stageResults = []; gameState.playerStats = null;
+                renderMemberGrid();
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = '✨ DEBUT WITH SELECTED MEMBER';
+                showScreen('select');
+            }
+
+            function goToTitle() { stopRhythmGame(); hideOverlay(); showScreen('title'); }
+
+            function confirmMember() {
+                if (!gameState.selectedMember) return;
+                const member = members.find(m => m.id === gameState.selectedMember);
+                gameState.playerStats = { ...member.stats };
+                gameState.fans = 1000; gameState.currentStageIndex = 0;
+                gameState.completedStages = []; gameState.stageResults = []; gameState.memberColor = member.color;
+                renderJourneyScreen(); showScreen('journey'); spawnParticles('🌟', 12);
+                playNote(523, 0.2, 'triangle', 0.1); // confirmation sound
+            }
+
+            function renderMemberGrid() {
+                memberGrid.innerHTML = members.map(m => {
+                    const sel = gameState.selectedMember === m.id ? ' selected' : '';
+                    return `<div class="member-card${sel}" data-member="${m.id}" style="border-left:3px solid ${m.color}44;">
+                        <div class="member-photo"><img src="${m.photo}" alt="${m.name}" loading="lazy"></div>
+                        <div class="member-name">${m.name}</div><div class="member-role">${m.role}</div>
+                        <div class="stat-row"><span class="stat-label-mini">🎤${m.stats.vocal}</span><span class="stat-label-mini">💃${m.stats.dance}</span><span class="stat-label-mini">🎙️${m.stats.rap}</span><span class="stat-label-mini">✨${m.stats.charisma}</span></div>
+                    </div>`;
+                }).join('');
+                memberGrid.querySelectorAll('img').forEach(img => img.addEventListener('error', function(){ this.parentElement.innerHTML = '🎤'; }));
+            }
+
+            function selectMember(id) {
+                gameState.selectedMember = id;
+                document.querySelectorAll('.member-card').forEach(c => c.classList.remove('selected'));
+                const card = document.querySelector(`[data-member="${id}"]`);
+                if (card) card.classList.add('selected');
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = `✨ DEBUT AS ${members.find(m=>m.id===id).name.toUpperCase()} ✨`;
+                playNote(440, 0.1, 'sine', 0.08);
+            }
+
+            function renderJourneyScreen() {
+                const member = members.find(m => m.id === gameState.selectedMember);
+                journeyHeader.innerHTML = `<div class="member-photo" style="margin:0 auto 8px; width:70px; height:85px;"><img src="${member.photo}" alt="${member.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></div><div style="font-weight:700;font-size:1.1em;letter-spacing:1px;color:var(--white);">${member.name}'s Journey</div><div style="color:var(--subtle);font-size:0.7em;letter-spacing:2px;">${member.role}</div>`;
+                journeyHeader.querySelector('img').addEventListener('error', function(){ this.parentElement.innerHTML = '👑'; });
+                fanCount.textContent = gameState.fans.toLocaleString();
+                const s = gameState.playerStats;
+                statsDisplay.innerHTML = `<div class="stat-chip">🎤 Vocal <span class="stat-val">${s.vocal}</span></div><div class="stat-chip">💃 Dance <span class="stat-val">${s.dance}</span></div><div class="stat-chip">🎙️ Rap <span class="stat-val">${s.rap}</span></div><div class="stat-chip">✨ Charisma <span class="stat-val">${s.charisma}</span></div>`;
+                journeyPath.innerHTML = stages.map((st,i) => {
+                    let cls='locked', txt='🔒', lbl='Locked';
+                    if (gameState.completedStages.includes(i)) { cls='completed'; txt='✅'; lbl='done'; }
+                    else if (i===gameState.currentStageIndex) { cls='current'; txt='🎸'; lbl='now'; }
+                    return `<div class="stage-node ${cls}" data-stage="${i}"><span class="stage-icon">${st.icon}</span><div class="stage-info"><div class="stage-name">${st.song}</div><div class="stage-desc">${st.name} · BPM ${st.bpm}</div></div><span class="stage-status ${lbl}">${txt} ${lbl==='now'?'GO!':''}</span></div>`;
+                }).join('');
+                if (gameState.completedStages.length >= stages.length) showGameComplete();
+            }
+
+            function startStage(index) {
+                if (index !== gameState.currentStageIndex || gameState.gameRunning) return;
+                const stage = stages[index]; gameState.statUsed = stage.stat;
+                songNameEl.textContent = '🎵 ' + stage.song;
+                challengeStatEl.textContent = `Required: ${stage.stat.toUpperCase()} (Your stat: ${gameState.playerStats[stage.stat]})`;
+                stageHint.textContent = 'Tap the lanes when notes hit the golden zone!';
+                showScreen('challenge'); startRhythmGame(stage);
+                playNote(660, 0.1, 'triangle', 0.1);
+            }
+
+            // ---------- RHYTHM GAME ----------
+            let animFrameId;
+            function generatePattern(stage) {
+                const pattern = [], totalNotes = stage.noteCount, beatInterval = 60000 / stage.bpm, songDuration = totalNotes * beatInterval * 0.9;
+                for (let i=0; i<totalNotes; i++) { pattern.push({ time:(i/totalNotes)*songDuration, lane:Math.floor(Math.random()*4) }); }
+                pattern.sort((a,b)=>a.time-b.time);
+                for (let i=1; i<pattern.length; i++) { if (pattern[i].lane===pattern[i-1].lane && (pattern[i].time-pattern[i-1].time)<180) pattern[i].time = pattern[i-1].time+200; }
+                return pattern;
+            }
+
+            function startRhythmGame(stage) {
+                stopRhythmGame(); gameState.gameRunning = true; gameState.stageDone = false;
+                gameState.pattern = generatePattern(stage); gameState.notes = [];
+                gameState.startTime = performance.now(); gameState.score = 0; gameState.combo = 0; gameState.maxCombo = 0;
+                gameState.totalNotes = stage.noteCount; gameState.hitNotes = 0; gameState.missedNotes = 0;
+                scoreDisplay.textContent = '0'; comboDisplay.textContent = '0';
+                lanes.forEach(l => l.innerHTML = '');
+                requestAnimationFrame(gameLoop);
+            }
+
+            function stopRhythmGame() { gameState.gameRunning = false; if (animFrameId) cancelAnimationFrame(animFrameId); gameState.notes = []; }
+
+            function spawnNote(nd) {
+                const laneEl = lanes[nd.lane], note = document.createElement('div'); note.className = 'note';
+                note.style.top = '-30px'; note.dataset.spawnTime = nd.time;
+                laneEl.appendChild(note); gameState.notes.push({ el:note, lane:nd.lane, time:nd.time, hit:false });
+            }
+
+            const HZ_TOP = 0.78, HZ_BOT = 0.92;
+            const hHeight = () => highway.clientHeight;
+
+            function gameLoop(now) {
+                if (!gameState.gameRunning) return;
+                const elapsed = now - gameState.startTime, stage = stages[gameState.currentStageIndex];
+                const stat = gameState.playerStats[stage.stat], bonus = (stat-40)/100, perfectW = 35+bonus*20, goodW = 70+bonus*15;
+                while (gameState.pattern.length && gameState.pattern[0].time <= elapsed) spawnNote(gameState.pattern.shift());
+                const hh = hHeight();
+                gameState.notes.forEach(n => {
+                    if (n.hit) return;
+                    const topPos = ((elapsed - n.time)/1500)*hh*0.9 - 30;
+                    n.el.style.top = topPos + 'px';
+                    if (topPos > hh * HZ_BOT + 20) {
+                        n.hit = true; n.el.style.opacity = '0.3';
+                        gameState.missedNotes++; gameState.combo = 0;
+                        comboDisplay.textContent = gameState.combo;
+                        setTimeout(() => n.el.remove(), 100);
+                    }
+                });
+                if (gameState.pattern.length===0 && gameState.notes.every(n=>n.hit) && !gameState.stageDone) {
+                    gameState.stageDone = true; finishStage(stage);
+                }
+                animFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            function hitLane(laneIdx) {
+                if (!gameState.gameRunning) return;
+                const stage = stages[gameState.currentStageIndex], stat = gameState.playerStats[stage.stat];
+                const bonus = (stat-40)/100, perfectW = 35+bonus*20, goodW = 70+bonus*15;
+                const hh = hHeight(), hitCenter = (hh*HZ_TOP+hh*HZ_BOT)/2;
+                let bestNote=null, bestDist=Infinity;
+                gameState.notes.forEach(n => {
+                    if (n.hit || n.lane!==laneIdx) return;
+                    const top = parseFloat(n.el.style.top)||0, noteCenter = top+12;
+                    if (noteCenter > hh*HZ_TOP-40 && noteCenter < hh*HZ_BOT+40) {
+                        const dist = Math.abs(noteCenter - hitCenter);
+                        if (dist < bestDist) { bestDist=dist; bestNote=n; }
+                    }
+                });
+                if (bestNote) {
+                    bestNote.hit = true;
+                    if (bestDist <= perfectW) {
+                        gameState.score += 100*(gameState.combo>0?gameState.combo:1); gameState.combo++;
+                        bestNote.el.classList.add('perfect');
+                        playHitSound('perfect');
+                        spawnParticles('✨',4);
+                    } else if (bestDist <= goodW) {
+                        gameState.score += 50*(gameState.combo>0?gameState.combo:1); gameState.combo++;
+                        bestNote.el.classList.add('good');
+                        playHitSound('good');
+                    } else {
+                        gameState.score += 10; gameState.combo=0;
+                        playHitSound('miss');
+                    }
+                    gameState.hitNotes++; if (gameState.combo>gameState.maxCombo) gameState.maxCombo=gameState.combo;
+                    comboDisplay.textContent = gameState.combo; scoreDisplay.textContent = gameState.score;
+                    setTimeout(() => bestNote.el.remove(), 80);
+                } else {
+                    gameState.combo = 0; comboDisplay.textContent = gameState.combo;
+                    playNote(100, 0.05, 'square', 0.03);
+                }
+            }
+
+            function finishStage(stage) {
+                stopRhythmGame();
+                const totalPossible = gameState.totalNotes*100*5, perf = gameState.score/Math.max(1,totalPossible);
+                let result = 'miss'; if (perf>0.7) result='perfect'; else if (perf>0.4) result='good';
+                const fansGained = Math.floor(stage.fanReward*(0.5+perf)*(1+gameState.playerStats[stage.stat]/200));
+                gameState.fans += fansGained; gameState.completedStages.push(gameState.currentStageIndex);
+                gameState.stageResults.push({ stage:stage.id, result, fansGained, statUsed:stage.stat });
+                const boost = result==='perfect'?5:(result==='good'?3:1);
+                gameState.playerStats[stage.stat] = Math.min(99, gameState.playerStats[stage.stat]+boost);
+                const emoji = result==='perfect'?'🌟':(result==='good'?'👍':'😞');
+                const label = result==='perfect'?'PERFECT!':(result==='good'?'Good Job!':'Keep Trying!');
+                const color = result==='perfect'?'#4cff8d':(result==='good'?'#f0c060':'#ff6b6b');
+                overlay.innerHTML = `<div class="result-popup" id="result-popup"><span class="result-emoji">${emoji}</span><div class="result-text" style="color:${color};">${label}</div><p>Song: <strong>${stage.song}</strong></p><p style="color:var(--gold);">+${fansGained.toLocaleString()} Fans!</p><p>Score: ${gameState.score} · Max Combo ${gameState.maxCombo}x</p><p style="color:var(--subtle);">${stage.stat.toUpperCase()} +${boost} ⬆</p><button class="btn btn-gold" id="btn-continue">CONTINUE →</button></div>`;
+                overlay.classList.add('active');
+                document.getElementById('btn-continue').addEventListener('click', continueJourney);
+                spawnParticles(result==='perfect'?'💖🎉':'✨',15);
+                if (result==='perfect') { playNote(880,0.2,'triangle',0.15); setTimeout(()=>playNote(1100,0.2,'triangle',0.1),100); }
+            }
+
+            function continueJourney() {
+                hideOverlay(); gameState.currentStageIndex = gameState.completedStages.length;
+                if (gameState.currentStageIndex >= stages.length) showGameComplete();
+                else { renderJourneyScreen(); showScreen('journey'); }
+            }
+
+            function hideOverlay() { overlay.classList.remove('active'); overlay.innerHTML = ''; }
+
+            function showGameComplete() {
+                const total = gameState.fans;
+                let rank = total>=500000?'🏆 LEGENDARY STAR':total>=300000?'🌟 SUPERSTAR':total>=150000?'💫 RISING STAR':total>=50000?'🎤 POPULAR IDOL':'🌱 ROOKIE';
+                const member = members.find(m=>m.id===gameState.selectedMember);
+                overlay.innerHTML = `<div class="result-popup" id="final-popup" style="max-width:420px;"><span style="font-size:4em;">🎉</span><div class="result-text" style="color:var(--gold);">JOURNEY COMPLETE!</div><p style="color:var(--white);">${member.name} - ${rank}</p><p style="color:var(--gold);font-weight:700;font-size:1.2em;">${total.toLocaleString()} Fans</p><div style="margin:8px 0;text-align:left;font-size:0.75em;">${gameState.stageResults.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>${stages[i].song}</span><span style="color:${r.result==='perfect'?'#4cff8d':r.result==='good'?'#f0c060':'#ff6b6b'};">${r.result.toUpperCase()} (+${r.fansGained.toLocaleString()})</span></div>`).join('')}</div><p style="color:var(--white);">Final Stats: 🎤${gameState.playerStats.vocal} 💃${gameState.playerStats.dance} 🎙️${gameState.playerStats.rap} ✨${gameState.playerStats.charisma}</p><button class="btn btn-gold" id="btn-replay">🔄 PLAY AGAIN</button><button class="btn btn-secondary btn-sm" id="btn-title" style="display:block;width:100%;margin-top:8px;">← Title Screen</button></div>`;
+                overlay.classList.add('active');
+                document.getElementById('btn-replay').addEventListener('click', startGame);
+                document.getElementById('btn-title').addEventListener('click', goToTitle);
+                showScreen('journey');
+                playNote(1047,0.3,'triangle',0.15);
+            }
+
+            function spawnParticles(emojiStr, count) {
+                const emojis = [...emojiStr];
+                for (let i=0; i<count; i++) {
+                    setTimeout(() => {
+                        const p = document.createElement('div'); p.className = 'particle';
+                        p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+                        p.style.left = (20+Math.random()*60)+'%'; p.style.top = (30+Math.random()*40)+'%';
+                        p.style.animationDuration = (0.6+Math.random()*1.2)+'s';
+                        document.body.appendChild(p);
+                        setTimeout(() => p.remove(), 1500);
+                    }, i*30);
+                }
+            }
+
+            // First load jingle
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    initAudio();
+                    playTitleJingle();
+                }, 500);
+            });
+
+            renderMemberGrid(); showScreen('title');
+        })();
+    </script>
+</body>
+</html>
