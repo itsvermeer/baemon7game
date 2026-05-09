@@ -256,6 +256,10 @@
         <div class="overlay" id="overlay"></div>
     </div>
 
+    <!-- NATIVE AUDIO ELEMENTS (no CORS, works everywhere with user gesture) -->
+    <audio id="intro-music" loop preload="auto" src="https://www.dropbox.com/scl/fi/n4tsockzskivncm7qjpfs/BABYMONSTER-MONSTERS-Intro-Official-Audio.mp3?rlkey=9ix2x5gm49h6ilvxpnzsdl8sn&st=o4pxseia&dl=1"></audio>
+    <audio id="stage-music" loop preload="auto"></audio>
+
     <script>
         (function() {
             const members = [
@@ -320,119 +324,15 @@
                 }
             }
 
-            // Audio system using Web Audio API (no <audio> elements)
-            let audioCtx = null;
+            // Audio system – uses native <audio> elements (no CORS issues)
+            let audioCtx = null; // only for sound effects
+            const introMusic = document.getElementById('intro-music');
+            const stageMusic = document.getElementById('stage-music');
+            const musicToggle = document.getElementById('music-toggle');
             let musicEnabled = true;
-            let audioUnlocked = false;
-            let introMusicBuffer = null;
-            let currentStageBuffer = null;
-            let currentSource = null; // for stage music
-            let currentIntroSource = null;
-            let currentGainNode = null;
 
             function initAudio() {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            async function unlockAudio() {
-                initAudio();
-                if (audioCtx.state === 'suspended') {
-                    await audioCtx.resume();
-                }
-                // Pre-load intro music
-                try {
-                    const response = await fetch('https://www.dropbox.com/scl/fi/n4tsockzskivncm7qjpfs/BABYMONSTER-MONSTERS-Intro-Official-Audio.mp3?rlkey=9ix2x5gm49h6ilvxpnzsdl8sn&st=o4pxseia&dl=1');
-                    const arrayBuffer = await response.arrayBuffer();
-                    introMusicBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                } catch(e) { console.log('Intro music load error:', e); }
-                audioUnlocked = true;
-            }
-
-            async function loadStageBuffer(url) {
-                initAudio();
-                try {
-                    const response = await fetch(url);
-                    const arrayBuffer = await response.arrayBuffer();
-                    return await audioCtx.decodeAudioData(arrayBuffer);
-                } catch(e) { console.log('Stage music load error:', e); return null; }
-            }
-
-            function stopStageMusic() {
-                if (currentSource) {
-                    currentSource.stop();
-                    currentSource = null;
-                }
-            }
-
-            function stopIntroMusic() {
-                if (currentIntroSource) {
-                    currentIntroSource.stop();
-                    currentIntroSource = null;
-                }
-            }
-
-            function playBuffer(buffer, loop = false) {
-                if (!audioCtx || !buffer || !musicEnabled) return;
-                const source = audioCtx.createBufferSource();
-                source.buffer = buffer;
-                source.loop = loop;
-                const gainNode = audioCtx.createGain();
-                gainNode.gain.value = 0.25;
-                source.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                source.start(0);
-                if (loop) {
-                    // keep reference based on which type
-                    if (buffer === introMusicBuffer) {
-                        currentIntroSource = source;
-                    } else {
-                        currentSource = source;
-                    }
-                }
-                currentGainNode = gainNode;
-            }
-
-            function playIntroMusic() {
-                if (introMusicBuffer && musicEnabled && audioUnlocked) {
-                    stopIntroMusic();
-                    playBuffer(introMusicBuffer, true); // loops
-                    currentIntroSource = currentSource; // careful: playBuffer sets currentSource if loop, but we need separate
-                    // Better: separate handling.
-                }
-            }
-            // Improved play functions:
-            function playStageAudio(stage) {
-                if (!musicEnabled || !audioUnlocked) return;
-                stopStageMusic();
-                // Load and play
-                loadStageBuffer(stage.mp3).then(buffer => {
-                    if (buffer && musicEnabled) {
-                        stopStageMusic(); // ensure stopped again
-                        const source = audioCtx.createBufferSource();
-                        source.buffer = buffer;
-                        source.loop = true;
-                        const gain = audioCtx.createGain();
-                        gain.gain.value = 0.25;
-                        source.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        source.start(0);
-                        currentSource = source;
-                    }
-                });
-            }
-
-            function playIntroAudio() {
-                if (!musicEnabled || !audioUnlocked || !introMusicBuffer) return;
-                stopIntroMusic();
-                const source = audioCtx.createBufferSource();
-                source.buffer = introMusicBuffer;
-                source.loop = true;
-                const gain = audioCtx.createGain();
-                gain.gain.value = 0.25;
-                source.connect(gain);
-                gain.connect(audioCtx.destination);
-                source.start(0);
-                currentIntroSource = source;
             }
 
             function playNote(freq, duration, type='sine', vol=0.1) {
@@ -448,40 +348,61 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
             }
-
             function playHitSound(quality) {
                 initAudio();
                 if (quality === 'perfect') { playNote(880, 0.1, 'triangle', 0.15); setTimeout(() => playNote(1100, 0.1, 'triangle', 0.1), 50); }
                 else if (quality === 'good') { playNote(660, 0.1, 'sine', 0.12); }
                 else { playNote(200, 0.1, 'square', 0.05); }
             }
-
             function playTitleJingle() {
                 initAudio();
                 const notes = [523, 659, 784, 880, 1047];
                 notes.forEach((freq, i) => { setTimeout(() => playNote(freq, 0.15, 'triangle', 0.1), i * 100); });
             }
 
-            const musicToggle = document.getElementById('music-toggle');
+            function stopIntroMusic() { introMusic.pause(); introMusic.currentTime = 0; }
+            function stopStageMusic() { stageMusic.pause(); stageMusic.currentTime = 0; }
+
+            function playIntroMusic() {
+                if (!musicEnabled) return;
+                stopStageMusic();
+                // play() from user gesture context works on iOS
+                introMusic.play().catch(e => console.log('intro play error', e));
+            }
+
+            function playStageMusic(stage) {
+                if (!musicEnabled || !stage.mp3) return;
+                stopIntroMusic();
+                stopStageMusic();
+                stageMusic.src = stage.mp3;
+                stageMusic.load();
+                // play after src change – still within user gesture (click on stage)
+                stageMusic.play().catch(e => console.log('stage play error', e));
+            }
+
             musicToggle.addEventListener('click', () => {
+                initAudio();
                 musicEnabled = !musicEnabled;
                 if (musicEnabled) {
                     musicToggle.textContent = '🔊';
-                    if (gameState.screen === 'select') playIntroAudio();
+                    if (gameState.screen === 'select') playIntroMusic();
                     else if (gameState.screen === 'challenge' && gameState.gameRunning) {
-                        const stage = stages[gameState.currentStageIndex];
-                        playStageAudio(stage);
+                        playStageMusic(stages[gameState.currentStageIndex]);
                     }
                 } else {
                     musicToggle.textContent = '🎵';
-                    stopIntroMusic();
-                    stopStageMusic();
+                    stopIntroMusic(); stopStageMusic();
                 }
             });
 
-            // Tap-to-start
-            document.getElementById('tap-to-start').addEventListener('click', async () => {
-                await unlockAudio();
+            // Tap-to-start overlay – unlocks audio and starts game
+            document.getElementById('tap-to-start').addEventListener('click', () => {
+                initAudio();
+                // pre-load and play intro music directly from user gesture
+                introMusic.play().then(() => {
+                    console.log('Intro music playing');
+                }).catch(e => console.log('autoplay prevented', e));
+
                 document.getElementById('tap-to-start').style.display = 'none';
                 showScreen('title');
                 playTitleJingle();
@@ -515,7 +436,7 @@
                 Object.values(screens).forEach(s => s.classList.remove('active'));
                 if (screens[name]) screens[name].classList.add('active');
                 gameState.screen = name;
-                if (name === 'select') playIntroAudio();
+                if (name === 'select') playIntroMusic();
                 else {
                     stopIntroMusic();
                     if (name !== 'challenge') stopStageMusic();
@@ -620,12 +541,12 @@
                 showScreen('challenge');
                 startRhythmGame(stage);
                 playNote(660, 0.1, 'triangle', 0.1);
-                playStageAudio(stage);
+                playStageMusic(stage); // called directly from click handler – works on iOS
             }
 
             let animFrameId;
             function generatePattern(stage) {
-                const totalDurationMs = 60000; // 1 minute
+                const totalDurationMs = 60000; // 1 minute exactly
                 const noteSpacing = totalDurationMs / stage.noteCount;
                 const pattern = [];
                 for (let i = 0; i < stage.noteCount; i++) {
